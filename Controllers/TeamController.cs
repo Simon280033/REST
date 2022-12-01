@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Properties;
 using Properties.Team;
 using System.Net;
@@ -43,10 +44,17 @@ namespace WebAPI.Controllers
 
         // POST api/<UserController>
         [HttpPost]
-        public async Task<int> Post([FromHeader] int value)
+        public async Task<IActionResult> Post([FromHeader] string channelId)
         {
-            return await team.PostTeam(value);
-
+            HttpResponseMessage response = await team.PostTeam(channelId);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            } else
+            {
+                return BadRequest(message);
+            }
         }
 
         // PUT api/<UserController>/5
@@ -69,7 +77,7 @@ namespace WebAPI.Controllers
 
         // DELETE api/<UserController>/5
         [HttpDelete("{id}")]
-        public async Task<int> Delete(int id)
+        public async Task<HttpStatusCode> Delete(int id)
         {
             return await team.DeleteTeam(id);
         }

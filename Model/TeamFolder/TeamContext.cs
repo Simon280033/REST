@@ -1,4 +1,5 @@
-﻿using Properties;
+﻿using Azure;
+using Properties;
 using Properties.Team;
 using System.Net;
 
@@ -13,26 +14,31 @@ namespace WebAPI.Model.TeamFolder
             ctx = db;
         }
 
-        public async Task<int> PostTeam(int channelID)
+        public async Task<HttpResponseMessage> PostTeam(string channelID)
         {
-
+            HttpResponseMessage response = new HttpResponseMessage();
             try
             {
                 var team = new SocioliteTeamProperty();
-                team.MSTeamsChannelId = channelID.ToString();
-                team.Recurring = "0000000";
+                team.MSTeamsChannelId = channelID;
+                team.Recurring = "00000000000";
+
+                if (ctx.Teams.Where(t=>t.MSTeamsChannelId.Equals(channelID)).Any())
+                {
+                    throw new Exception();
+                }
                 var res = ctx.Teams.Add(team);
-                //response.Content = res.CurrentValues;
-                //response.Content = new StringContent(JsonSerializer);
                 await ctx.SaveChangesAsync();
-                return 2;
             }
             catch (Exception e)
             {
-                return 0;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.Content = new StringContent("ERROR: This bot is already tied to a team!");
+                return response;
             }
-            return 0;
-
+            response.StatusCode = HttpStatusCode.OK;
+            response.Content = new StringContent("This team has succesfully been connected to Sociolite, with you as manager!");
+            return response;
         }
 
 
@@ -99,7 +105,7 @@ namespace WebAPI.Model.TeamFolder
 
         }
 
-        public async Task<int> DeleteTeam(int id)
+        public async Task<HttpStatusCode> DeleteTeam(int id)
         {
             //try
             //{
@@ -118,7 +124,7 @@ namespace WebAPI.Model.TeamFolder
             //{
             //    return StatusCodes.Status404NotFound;
             //}
-            return 0;
+            return HttpStatusCode.NotFound;
         }
     }
 }

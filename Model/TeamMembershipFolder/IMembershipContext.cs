@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
+using System.Net;
 using System.Text.Json.Nodes;
 
 namespace WebAPI.Model.MembershipFolder
@@ -10,7 +11,7 @@ namespace WebAPI.Model.MembershipFolder
         List<Object> GetMembership(List<int> data);
         Task<List<SocioliteTeamMembershipProperty>> GetMemberships();
         Task<int> PutMembership(int teamId,JsonObject jsonObject);
-        Task<int> PostMembership(SocioliteTeamProperty data, string userId);
+        Task<HttpStatusCode> PostMembership(SocioliteTeamProperty data, string userId);
         Task<int> DeleteMembership(int id);
     }
 }

@@ -11,7 +11,7 @@ namespace WebAPI.Model.TeamFolder
         int PutTeam(string recurrence, int teamId);
 
         Task<HttpStatusCode> ChangeActiveStatus(int teamId);
-        Task<int> PostTeam(int channelID);
-        Task<int> DeleteTeam(int id);
+        Task<HttpResponseMessage> PostTeam(string channelID);
+        Task<HttpStatusCode> DeleteTeam(int id);
     }
 }

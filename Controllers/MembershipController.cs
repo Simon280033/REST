@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
+using System.Net;
 using System.Text.Json.Nodes;
 using WebAPI.Model;
 using WebAPI.Model.MembershipFolder;
@@ -48,10 +49,9 @@ namespace WebAPI.Controllers
 
         // POST api/<UserController>
         [HttpPost]
-        public async Task<int> Post([FromBody] SocioliteTeamProperty data, [FromHeader] string userId)
+        public async Task<HttpStatusCode> Post([FromBody] SocioliteTeamProperty data, [FromHeader] string userId)
         {
             return await membership.PostMembership(data,userId);
-            return 2;
         }
 
         // PUT api/<UserController>/5

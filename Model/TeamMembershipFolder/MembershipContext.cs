@@ -2,6 +2,7 @@
 using Properties;
 using Properties.Team;
 using System.Collections.Generic;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -66,14 +67,13 @@ namespace WebAPI.Model.MembershipFolder
             throw new NotImplementedException();
         }
 
-        public async Task<int> PostMembership(SocioliteTeamProperty team, string id)
+        public async Task<HttpStatusCode> PostMembership(SocioliteTeamProperty team, string id)
         {
-
-            UserProperty user = ctx.Users.Where(t=>t.MSTeamsId.Equals(id)).FirstOrDefault();
-            SocioliteTeamProperty teamFromdB = ctx.Teams.Where(t=>t.TeamId==team.TeamId).FirstOrDefault();
-
             try
             {
+                UserProperty user = ctx.Users.Where(t => t.MSTeamsId.Equals(id)).FirstOrDefault();
+                SocioliteTeamProperty teamFromdB = ctx.Teams.Where(t => t.TeamId == team.TeamId).FirstOrDefault();
+
                 if (user != null && teamFromdB != null)
                 {
                     SocioliteTeamMembershipProperty membership = new SocioliteTeamMembershipProperty();
@@ -88,15 +88,16 @@ namespace WebAPI.Model.MembershipFolder
                     teamFromdB.isActive = team.isActive;
                     ctx.TeamMemberships.Add(membership);
                     ctx.SaveChanges();
+                } else
+                {
+                    throw new Exception();
                 }
             }
             catch (Exception e)
             {
-
+                return HttpStatusCode.NotFound;
             }
-
-
-            return 2;
+            return HttpStatusCode.OK;
         }
 
         public Task<int> PutMembership(int teamId, JsonObject jsonObject)
