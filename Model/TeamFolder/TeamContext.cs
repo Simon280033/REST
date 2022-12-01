@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.IdentityModel.Tokens;
 using Properties;
 using Properties.Team;
 using System.Net;
@@ -125,6 +126,11 @@ namespace WebAPI.Model.TeamFolder
             //    return StatusCodes.Status404NotFound;
             //}
             return HttpStatusCode.NotFound;
+        }
+
+        public List<SocioliteTeamProperty> GetUnconnectedTeams()
+        {
+            return ctx.Teams.Where(t => t.MSTeamsTeamId == null).ToList();
         }
     }
 }

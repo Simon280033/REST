@@ -11,7 +11,7 @@ namespace WebAPI.Model.MembershipFolder
         List<Object> GetMembership(List<int> data);
         Task<List<SocioliteTeamMembershipProperty>> GetMemberships();
         Task<int> PutMembership(int teamId,JsonObject jsonObject);
-        Task<HttpStatusCode> PostMembership(SocioliteTeamProperty data, string userId);
+        Task<HttpResponseMessage> PostMembership(List<Tuple<string, List<string>>> data, string userId);
         Task<int> DeleteMembership(int id);
     }
 }

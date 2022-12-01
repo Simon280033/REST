@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Properties;
 using Properties.Team;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.Json.Nodes;
 using WebAPI.Model;
@@ -40,6 +41,12 @@ namespace WebAPI.Controllers
             }
             return null;
 
+        }
+
+        [HttpGet("{UnconnectedTeams}")]
+        public List<SocioliteTeamProperty> GetUnconnectedTeams()
+        {
+            return team.GetUnconnectedTeams();
         }
 
         // POST api/<UserController>

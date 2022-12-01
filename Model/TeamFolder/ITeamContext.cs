@@ -13,5 +13,6 @@ namespace WebAPI.Model.TeamFolder
         Task<HttpStatusCode> ChangeActiveStatus(int teamId);
         Task<HttpResponseMessage> PostTeam(string channelID);
         Task<HttpStatusCode> DeleteTeam(int id);
+        List<SocioliteTeamProperty> GetUnconnectedTeams();
     }
 }

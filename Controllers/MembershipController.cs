@@ -5,6 +5,7 @@ using Properties;
 using Properties.Team;
 using System.Net;
 using System.Text.Json.Nodes;
+using System.Threading.Channels;
 using WebAPI.Model;
 using WebAPI.Model.MembershipFolder;
 
@@ -49,9 +50,18 @@ namespace WebAPI.Controllers
 
         // POST api/<UserController>
         [HttpPost]
-        public async Task<HttpStatusCode> Post([FromBody] SocioliteTeamProperty data, [FromHeader] string userId)
+        public async Task<IActionResult> Post([FromBody] List<Tuple<string, List<string>>> joinedChannels, [FromHeader] string userId)
         {
-            return await membership.PostMembership(data,userId);
+            HttpResponseMessage response = await membership.PostMembership(joinedChannels, userId);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
         }
 
         // PUT api/<UserController>/5
