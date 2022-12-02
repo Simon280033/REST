@@ -37,22 +37,16 @@ namespace WebAPI.Controllers
 
         // GET api/<UserController>/5
         [HttpGet]
-        public List<Object> Get([FromBody]List<int> data)
+        public async Task<List<SocioliteTeamMembershipProperty>> Get()
         {
-            var membershipId = membership.GetMembership(data);
-            if (membershipId != null)
-            {
-                return membershipId;
-            }
-            return null;
-
+            return await membership.GetMemberships();
         }
 
         // POST api/<UserController>
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] List<Tuple<string, List<string>>> joinedChannels, [FromHeader] string userId)
+        [HttpPost("TieUserToTeams/{userId}")]
+        public async Task<IActionResult> TieUserToTeams([FromBody] List<Tuple<Tuple<string, string>, List<string>>> joinedChannels, [FromHeader] string userId)
         {
-            HttpResponseMessage response = await membership.PostMembership(joinedChannels, userId);
+            HttpResponseMessage response = await membership.TieUserToTeams(joinedChannels, userId);
             string message = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
@@ -66,10 +60,10 @@ namespace WebAPI.Controllers
 
         // PUT api/<UserController>/5
         [HttpPut()]
-        public async Task<int> Put([FromHeader] int teamId, [FromBody] JsonObject jsonObject)
+        public async Task<IActionResult> Put([FromHeader] int teamId, [FromHeader] string userId)
         {
-            return await membership.PutMembership(teamId,jsonObject);
-            return 0;
+            await membership.PutMembership(teamId, userId);
+            return Ok();
         }
 
         // DELETE api/<UserController>/5

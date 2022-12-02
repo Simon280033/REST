@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using Properties;
 using WebAPI.Model;
@@ -36,6 +37,20 @@ namespace WebAPI.Controllers
             }
             return null;
             
+        }
+
+        [HttpGet("AllUsers")]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = user.GetUsers();
+            if (users.Count > 0)
+            {
+                return Ok(Newtonsoft.Json.JsonConvert.SerializeObject(users)); // List as JSON
+            }
+            else
+            {
+                return BadRequest("No users found");
+            }
         }
 
         // POST api/<UserController>

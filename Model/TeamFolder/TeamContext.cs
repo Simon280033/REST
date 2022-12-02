@@ -1,7 +1,9 @@
 ﻿using Azure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Properties;
 using Properties.Team;
+using System.Collections.Generic;
 using System.Net;
 
 namespace WebAPI.Model.TeamFolder
@@ -62,9 +64,8 @@ namespace WebAPI.Model.TeamFolder
 
         public List<SocioliteTeamProperty> GetTeams()
         {
-            //List<TeamProperty> teams = (from a in ctx.Teams select a).ToList();
-            //return new List<TeamProperty>();
-            return null;
+            List<SocioliteTeamProperty> teams = (from a in ctx.Teams select a).ToList();
+            return teams;
         }
 
         public int PutTeam(string recurrence, int teamId)
@@ -131,6 +132,89 @@ namespace WebAPI.Model.TeamFolder
         public List<SocioliteTeamProperty> GetUnconnectedTeams()
         {
             return ctx.Teams.Where(t => t.MSTeamsTeamId == null).ToList();
+        }
+
+        public async Task<HttpResponseMessage> GetJoinedTeams(string userId)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            List<SocioliteTeamProperty> teams;
+            try
+            {
+                // We get the memberships for the user
+                var memberships = ctx.TeamMemberships.Where(m => m.UserId.Equals(userId)).ToList();
+
+                // We make a list with the team IDs
+                List<int> teamIds = new List<int>();
+
+                foreach(var membership in memberships)
+                {
+                    teamIds.Add(membership.TeamId);
+                }
+
+                // Then we get the joined teams
+                teams = ctx.Teams.Where(t => teamIds.Any(id => id == t.TeamId)).ToList();
+            }
+            catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("ERROR: Something went wrong!");
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.OK;
+            if (teams.Count == 0)
+            {
+                response.Content = new StringContent("No joined teams!");
+            }
+            else
+            {
+                // We get the roles for the teams
+                List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>> teamsWithRoles = new List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>>();
+                
+                foreach (var team in teams)
+                {
+                    var membershipsForTeam = ctx.TeamMemberships.Where(m => m.TeamId == team.TeamId).ToList();
+
+                    List<Tuple<UserProperty, string>> usersWithRoles = new List<Tuple<UserProperty, string>>();
+
+                    foreach (var membership in membershipsForTeam)
+                    {
+                        UserProperty user = ctx.Users.Where(u => u.MSTeamsId.Equals(membership.UserId)).FirstOrDefault();
+                        Tuple<UserProperty, string> userWithRole = new Tuple<UserProperty, string>(user, membership.TeamSpecificRole);
+                        usersWithRoles.Add(userWithRole);
+                    }
+
+                    teamsWithRoles.Add(new Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>(team, usersWithRoles));
+                }
+                response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(teamsWithRoles));
+            }
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> WipeAll()
+        {
+            foreach (var item in ctx.TeamMemberships)
+            {
+                ctx.TeamMemberships.Remove(item);
+            }
+            ctx.SaveChanges();
+
+            foreach (var item in ctx.Users)
+            {
+                ctx.Users.Remove(item);
+            }
+            ctx.SaveChanges();
+
+            foreach (var item in ctx.Teams)
+            {
+                ctx.Teams.Remove(item);
+            }
+            ctx.SaveChanges();
+
+            HttpResponseMessage response = new HttpResponseMessage();
+            response.StatusCode = HttpStatusCode.OK;
+            response.Content = new StringContent("ALL WIPED!");
+            return response;
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
+using Newtonsoft.Json;
 using Properties;
 using Properties.Team;
 using System.Collections.Generic;
@@ -32,9 +34,9 @@ namespace WebAPI.Controllers
 
         // GET api/<UserController>/5
         [HttpGet()]
-        public List<SocioliteTeamProperty> Get([FromHeader] int userId)
+        public List<SocioliteTeamProperty> Get([FromHeader] int teamId)
         {
-            var TeamId = team.GetTeam(userId);
+            var TeamId = team.GetTeam(teamId);
             if (TeamId != null)
             {
                 return TeamId;
@@ -43,7 +45,30 @@ namespace WebAPI.Controllers
 
         }
 
-        [HttpGet("{UnconnectedTeams}")]
+
+        [HttpGet("AllTeams")]
+        public List<SocioliteTeamProperty> GetAllTeams()
+        {
+            return team.GetTeams();
+        }
+
+        [HttpGet("JoinedTeams/{userId}")]
+        public async Task<IActionResult> GetJoinedTeams([FromHeader] string userId)
+        {
+            var response = await team.GetJoinedTeams(userId);
+            string JsonContentString = response.Content.ReadAsStringAsync().Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(JsonContentString); // List as JSON
+            }
+            else
+            {
+                return NotFound(JsonContentString);
+            }
+        }
+
+        [HttpGet("UnconnectedTeams")]
         public List<SocioliteTeamProperty> GetUnconnectedTeams()
         {
             return team.GetUnconnectedTeams();
@@ -83,10 +108,12 @@ namespace WebAPI.Controllers
         }
 
         // DELETE api/<UserController>/5
-        [HttpDelete("{id}")]
-        public async Task<HttpStatusCode> Delete(int id)
+        [HttpDelete("WipeAll")]
+        public async Task<IActionResult> WipeAll()
         {
-            return await team.DeleteTeam(id);
+            HttpResponseMessage response = await team.WipeAll();
+            string message = await response.Content.ReadAsStringAsync();
+            return Ok(message);
         }
 
     }

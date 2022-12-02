@@ -64,14 +64,17 @@ namespace WebAPI.Model.MembershipFolder
 
         }
 
-        public Task<List<SocioliteTeamMembershipProperty>> GetMemberships()
+        public async Task<List<SocioliteTeamMembershipProperty>> GetMemberships()
         {
-            throw new NotImplementedException();
+            List<SocioliteTeamMembershipProperty> memberships = (from a in ctx.TeamMemberships select a).ToList();
+            return memberships;
         }
 
-        public async Task<HttpResponseMessage> PostMembership(List<Tuple<string, List<string>>> teamsWithChannels, string id)
+        public async Task<HttpResponseMessage> TieUserToTeams(List<Tuple<Tuple<string, string>, List<string>>> teamsWithChannels, string id)
         {
             HttpResponseMessage response = new HttpResponseMessage();
+
+            int tiedTo = 0;
 
             try
             {
@@ -141,11 +144,12 @@ namespace WebAPI.Model.MembershipFolder
                         var result = ctx.Teams.SingleOrDefault(b => b.MSTeamsChannelId.Equals(channel));
                         if (result != null)
                         {
-                            result.MSTeamsTeamId = team.Item1;
+                            result.MSTeamsTeamId = team.Item1.Item1;
+                            result.Name = team.Item1.Item2;
                             ctx.SaveChanges();
 
                             // We check if the team already has members, if this is the first, we add as manager
-                            bool firstMember = ctx.TeamMemberships.Where(m => m.TeamId.Equals(result.TeamId)).Any();
+                            bool firstMember = !ctx.TeamMemberships.Where(m => m.TeamId.Equals(result.TeamId)).Any();
 
                             string role = "Scheduler";
 
@@ -163,6 +167,8 @@ namespace WebAPI.Model.MembershipFolder
 
                             ctx.TeamMemberships.Add(membership);
                             await ctx.SaveChangesAsync();
+
+                            tiedTo++;
                         }
                         break;
                     }
@@ -177,19 +183,19 @@ namespace WebAPI.Model.MembershipFolder
             }
 
             response.StatusCode = HttpStatusCode.OK;
-            response.Content = new StringContent("Succesfully tied user to team!");
+            response.Content = new StringContent("Succesfully tied user to " + tiedTo + " team(s)!");
             return response;
         }
 
-        public Task<int> PutMembership(int teamId, JsonObject jsonObject)
+        public async Task<HttpResponseMessage> PutMembership(int teamId, string userId)
         {
-            
-            var listOfUSers = jsonObject.ToArray();
+            var result = ctx.TeamMemberships.SingleOrDefault(b => b.UserId.Equals(userId));
 
-           // ICollection<UserProperty> users = jsonObject.Where(t => t.Key.Contains("UserProperty"));
+            result.TeamSpecificRole = "Manager";
 
-            //listOfUSers.Where(t=> t.Value.=teamId).ToList();
-            throw new NotImplementedException();
+            await ctx.SaveChangesAsync();
+
+            return null;
         }
     }
 }

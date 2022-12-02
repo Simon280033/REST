@@ -6,6 +6,8 @@ namespace WebAPI.Model.TeamFolder
 {
     public interface ITeamContext
     {
+        Task<HttpResponseMessage> GetJoinedTeams(string userId);
+
         List<SocioliteTeamProperty> GetTeam(int user);
         List<SocioliteTeamProperty> GetTeams();
         int PutTeam(string recurrence, int teamId);
@@ -14,5 +16,7 @@ namespace WebAPI.Model.TeamFolder
         Task<HttpResponseMessage> PostTeam(string channelID);
         Task<HttpStatusCode> DeleteTeam(int id);
         List<SocioliteTeamProperty> GetUnconnectedTeams();
+
+        Task<HttpResponseMessage> WipeAll();
     }
 }
