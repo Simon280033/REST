@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
+using Sociolite.Models;
 using System.Net;
 using System.Text.Json.Nodes;
 
@@ -11,8 +12,8 @@ namespace WebAPI.Model.MembershipFolder
     {
         List<Object> GetMembership(List<int> data);
         Task<List<SocioliteTeamMembershipProperty>> GetMemberships();
-        Task<HttpResponseMessage> PutMembership(int teamId, string userId);
-        Task<HttpResponseMessage> TieUserToTeams(List<Tuple<Tuple<string, string>, List<string>>> data, string userId);
+        Task<HttpResponseMessage> UpdateMembership(int teamId, string userId, string newRole);
+        Task<HttpResponseMessage> TieUserToTeams(List<SocioliteTeam> teamsWithChannels, string userId);
         Task<int> DeleteMembership(int id);
     }
 }

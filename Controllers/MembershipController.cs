@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
+using Sociolite.Models;
 using System.Net;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
@@ -44,9 +45,9 @@ namespace WebAPI.Controllers
 
         // POST api/<UserController>
         [HttpPost("TieUserToTeams/{userId}")]
-        public async Task<IActionResult> TieUserToTeams([FromBody] List<Tuple<Tuple<string, string>, List<string>>> joinedChannels, [FromHeader] string userId)
+        public async Task<IActionResult> TieUserToTeams([FromBody] List<SocioliteTeam> teamsWithChannels, [FromHeader] string userId)
         {
-            HttpResponseMessage response = await membership.TieUserToTeams(joinedChannels, userId);
+            HttpResponseMessage response = await membership.TieUserToTeams(teamsWithChannels, userId);
             string message = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
@@ -59,11 +60,19 @@ namespace WebAPI.Controllers
         }
 
         // PUT api/<UserController>/5
-        [HttpPut()]
-        public async Task<IActionResult> Put([FromHeader] int teamId, [FromHeader] string userId)
+        [HttpPut("Update/{userId}/{teamId}/{newRole}")]
+        public async Task<IActionResult> UpdateMembership([FromHeader] int teamId, [FromHeader] string userId, [FromHeader] string newRole)
         {
-            await membership.PutMembership(teamId, userId);
-            return Ok();
+            HttpResponseMessage response = await membership.UpdateMembership(teamId, userId, newRole);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
         }
 
         // DELETE api/<UserController>/5

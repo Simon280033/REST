@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
+using Sociolite.Models;
 using System.Collections.Generic;
 using System.Net;
 using System.Text.Json;
@@ -70,7 +71,7 @@ namespace WebAPI.Model.MembershipFolder
             return memberships;
         }
 
-        public async Task<HttpResponseMessage> TieUserToTeams(List<Tuple<Tuple<string, string>, List<string>>> teamsWithChannels, string id)
+        public async Task<HttpResponseMessage> TieUserToTeams(List<SocioliteTeam> teamsWithChannels, string userId)
         {
             HttpResponseMessage response = new HttpResponseMessage();
 
@@ -83,7 +84,7 @@ namespace WebAPI.Model.MembershipFolder
 
             foreach (var team in teamsWithChannels)
             {
-                totalChannelIds.AddRange(team.Item2);
+                totalChannelIds.AddRange(team.TeamsChannelIds);
             }
 
             // First, we check if there are any teams with any of the supplied channel IDs
@@ -98,12 +99,12 @@ namespace WebAPI.Model.MembershipFolder
             }
 
             // We create the user if they don't already exist
-            bool userExists = ctx.Users.Where(user => user.MSTeamsId.Equals(id)).Any();
+            bool userExists = ctx.Users.Where(user => user.MSTeamsId.Equals(userId)).Any();
 
             if (!userExists)
             {
                 UserProperty user = new UserProperty();
-                user.MSTeamsId = id;
+                user.MSTeamsId = userId;
                 user.FirstName = "";
                 ctx.Users.Add(user);
                 await ctx.SaveChangesAsync();
@@ -113,7 +114,7 @@ namespace WebAPI.Model.MembershipFolder
                 List<string> channelsToLink = new List<string>();
                 List<int> teamsAlreadyPartOf = new List<int>();
 
-                var memberships = ctx.TeamMemberships.Where(membership => membership.UserId.Equals(id)).ToList();
+                var memberships = ctx.TeamMemberships.Where(membership => membership.UserId.Equals(userId)).ToList();
 
                 foreach (var membership in memberships)
                 {
@@ -122,10 +123,7 @@ namespace WebAPI.Model.MembershipFolder
 
                 foreach (var team in teams)
                 {
-                    if (!teamsAlreadyPartOf.Contains(team.TeamId))
-                    {
-                        channelsToLink.Add(team.MSTeamsChannelId);
-                    }
+                    channelsToLink.Add(team.MSTeamsChannelId);
                 }
 
                 totalChannelIds = channelsToLink;
@@ -134,18 +132,17 @@ namespace WebAPI.Model.MembershipFolder
             // Then we create memberships for each of them
             foreach(var channel in totalChannelIds)
             {
-
                 // We get the appropriate team
                 foreach(var team in teamsWithChannels)
                 {
-                    if (team.Item2.Contains(channel))
+                    if (team.TeamsChannelIds.Contains(channel))
                     {
                         // We add MS Teams ID to team
                         var result = ctx.Teams.SingleOrDefault(b => b.MSTeamsChannelId.Equals(channel));
                         if (result != null)
                         {
-                            result.MSTeamsTeamId = team.Item1.Item1;
-                            result.Name = team.Item1.Item2;
+                            result.MSTeamsTeamId = team.TeamsTeamId;
+                            result.Name = team.Name;
                             ctx.SaveChanges();
 
                             // We check if the team already has members, if this is the first, we add as manager
@@ -160,7 +157,7 @@ namespace WebAPI.Model.MembershipFolder
 
                             // We create the membership
                             SocioliteTeamMembershipProperty membership = new SocioliteTeamMembershipProperty{
-                                UserId = id,
+                                UserId = userId,
                                 TeamId = result.TeamId,
                                 TeamSpecificRole = role
                             };
@@ -187,15 +184,26 @@ namespace WebAPI.Model.MembershipFolder
             return response;
         }
 
-        public async Task<HttpResponseMessage> PutMembership(int teamId, string userId)
+        public async Task<HttpResponseMessage> UpdateMembership(int teamId, string userId, string newRole)
         {
-            var result = ctx.TeamMemberships.SingleOrDefault(b => b.UserId.Equals(userId));
+            HttpResponseMessage response = new HttpResponseMessage();
 
-            result.TeamSpecificRole = "Manager";
+            try
+            {
+                var result = ctx.TeamMemberships.SingleOrDefault(b => b.UserId.Equals(userId));
 
-            await ctx.SaveChangesAsync();
+                result.TeamSpecificRole = newRole;
 
-            return null;
+                await ctx.SaveChangesAsync();
+            } catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("ERROR: Something went wrong!");
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.OK;
+            response.Content = new StringContent("Succesfully updated user role!");
+            return response;
         }
     }
 }

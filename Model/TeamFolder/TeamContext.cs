@@ -162,32 +162,34 @@ namespace WebAPI.Model.TeamFolder
                 return response;
             }
             response.StatusCode = HttpStatusCode.OK;
-            if (teams.Count == 0)
-            {
-                response.Content = new StringContent("No joined teams!");
-            }
-            else
-            {
+
                 // We get the roles for the teams
                 List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>> teamsWithRoles = new List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>>();
                 
                 foreach (var team in teams)
                 {
-                    var membershipsForTeam = ctx.TeamMemberships.Where(m => m.TeamId == team.TeamId).ToList();
-
-                    List<Tuple<UserProperty, string>> usersWithRoles = new List<Tuple<UserProperty, string>>();
-
-                    foreach (var membership in membershipsForTeam)
+                    if (team.MSTeamsTeamId != null)
                     {
-                        UserProperty user = ctx.Users.Where(u => u.MSTeamsId.Equals(membership.UserId)).FirstOrDefault();
-                        Tuple<UserProperty, string> userWithRole = new Tuple<UserProperty, string>(user, membership.TeamSpecificRole);
-                        usersWithRoles.Add(userWithRole);
-                    }
+                        var membershipsForTeam = ctx.TeamMemberships.Where(m => m.TeamId == team.TeamId).ToList();
 
-                    teamsWithRoles.Add(new Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>(team, usersWithRoles));
+                        List<Tuple<UserProperty, string>> usersWithRoles = new List<Tuple<UserProperty, string>>();
+
+                        foreach (var membership in membershipsForTeam)
+                        {
+                            UserProperty user = ctx.Users.Where(u => u.MSTeamsId.Equals(membership.UserId)).FirstOrDefault();
+                            Tuple<UserProperty, string> userWithRole = new Tuple<UserProperty, string>(user, membership.TeamSpecificRole);
+                            usersWithRoles.Add(userWithRole);
+                        }
+
+                        teamsWithRoles.Add(new Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>(team, usersWithRoles));
+                    }
+                }
+                if (teams.Count == 0)
+                {
+                    response.Content = new StringContent("No joined teams!");
                 }
                 response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(teamsWithRoles));
-            }
+            
             return response;
         }
 
