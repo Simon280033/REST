@@ -190,11 +190,40 @@ namespace WebAPI.Model.MembershipFolder
 
             try
             {
-                var result = ctx.TeamMemberships.SingleOrDefault(b => b.UserId.Equals(userId));
+                // First we check if user exists
+                bool userExists = ctx.Users.Where(user => user.MSTeamsId.Equals(userId)).Any();
 
-                result.TeamSpecificRole = newRole;
+                // If they don't, we create them
+                if (!userExists)
+                {
+                    UserProperty user = new UserProperty();
+                    user.MSTeamsId = userId;
+                    user.FirstName = "";
+                    ctx.Users.Add(user);
+                    await ctx.SaveChangesAsync();
+                }
 
-                await ctx.SaveChangesAsync();
+                // Then we check if the membership exists
+                bool membershipExists = ctx.TeamMemberships.Where(membership => membership.UserId.Equals(userId) && membership.TeamId.Equals(teamId)).Any();
+
+                // If it doesn't, we create it
+                if (!membershipExists)
+                {
+                    SocioliteTeamMembershipProperty membership = new SocioliteTeamMembershipProperty();
+                    membership.UserId = userId;
+                    membership.TeamId = teamId;
+                    membership.TeamSpecificRole = newRole;
+                    ctx.TeamMemberships.Add(membership);
+                    await ctx.SaveChangesAsync();
+                } 
+                else // Otherwise, we update it
+                {
+                    var result = ctx.TeamMemberships.SingleOrDefault(membership => membership.UserId.Equals(userId) && membership.TeamId.Equals(teamId));
+
+                    result.TeamSpecificRole = newRole;
+
+                    await ctx.SaveChangesAsync();
+                }
             } catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;

@@ -1,4 +1,5 @@
-﻿using Properties;
+﻿using Microsoft.AspNetCore.Mvc;
+using Properties;
 using Properties.Team;
 using System.Net;
 
@@ -18,5 +19,6 @@ namespace WebAPI.Model.TeamFolder
         List<SocioliteTeamProperty> GetUnconnectedTeams();
 
         Task<HttpResponseMessage> WipeAll();
+        Task<HttpResponseMessage> UpdateRecurranceString(int teamId, string recurranceString);
     }
 }

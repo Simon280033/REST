@@ -116,5 +116,20 @@ namespace WebAPI.Controllers
             return Ok(message);
         }
 
+        [HttpPut("RecurranceString")]
+        public async Task<IActionResult> UpdateRecurranceString([FromBody] Tuple<string, string> teamIdAndNewRecurranceString)
+        {
+            HttpResponseMessage response = await team.UpdateRecurranceString(Int32.Parse(teamIdAndNewRecurranceString.Item1), teamIdAndNewRecurranceString.Item2);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
+        }
+
     }
 }

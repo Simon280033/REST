@@ -20,7 +20,13 @@ namespace WebAPI.Controllers
         {
             this.DiscussionContext = disucssion;
         }
-        
+
+        [HttpGet]
+        public async Task<List<CustomDiscussionProperty>> Get()
+        {
+            return await DiscussionContext.GetAllDiscussions();
+        }
+
 
         // POST api/<UserController>
         [HttpPost]

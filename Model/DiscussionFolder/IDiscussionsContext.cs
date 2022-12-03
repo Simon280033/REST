@@ -10,5 +10,7 @@ namespace WebAPI.Model.DisccusionFolder
         Task<HttpStatusCode> PostDiscussion(CustomDiscussionProperty disucssion);
         Task<HttpStatusCode> DeleteDiscussion(int id);
 
+        Task<List<CustomDiscussionProperty>> GetAllDiscussions();
+
     }
 }

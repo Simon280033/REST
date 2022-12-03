@@ -101,10 +101,6 @@ namespace WebAPI.Model.TeamFolder
             {
                 return HttpStatusCode.NotFound;
             }
-           
-
-            
-
         }
 
         public async Task<HttpStatusCode> DeleteTeam(int id)
@@ -217,6 +213,28 @@ namespace WebAPI.Model.TeamFolder
             response.StatusCode = HttpStatusCode.OK;
             response.Content = new StringContent("ALL WIPED!");
             return response;
+        }
+
+        public async Task<HttpResponseMessage> UpdateRecurranceString(int teamId, string recurranceString)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
+            {
+                SocioliteTeamProperty team = ctx.Teams.Where(t => t.TeamId == teamId).First();
+
+                team.Recurring = recurranceString;
+                await ctx.SaveChangesAsync();
+                response.StatusCode = HttpStatusCode.OK;
+                response.Content = new StringContent("Succesfully updated recurrance string!");
+                return response;
+            }
+            catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("Failed to update recurrance string!");
+                return response;
+            }
         }
     }
 }
