@@ -19,33 +19,69 @@ namespace WebAPI.Model.DisccusionFolder
             ctx = db;
         }
 
-        public async Task<HttpStatusCode> DeleteDiscussion(int id)
+        public async Task<HttpResponseMessage> DeleteDiscussion(List<CustomDiscussionProperty> discussions)
         {
-            var discussion = await ctx.CustomDiscussions.Where(c => c.Id == id).FirstOrDefaultAsync();
-            if (discussion != null)
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
             {
-                ctx.Remove(discussion);
-                var res = await ctx.SaveChangesAsync();
-                return HttpStatusCode.OK;
+                foreach(var item in discussions)
+                {
+                    var discussion = await ctx.CustomDiscussions.Where(c => c.Id == item.Id).FirstOrDefaultAsync();
+                    if (discussion != null)
+                    {
+                        ctx.Remove(discussion);
+                        var res = await ctx.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+                response.StatusCode = HttpStatusCode.OK;
+                response.Content = new StringContent("Succesfully deleted discussion!");
+                return response;
+            } catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("Failed to delete discussion!");
+                return response;
             }
-            return HttpStatusCode.NotFound;
         }
 
-        public async Task<List<CustomDiscussionProperty>> GetAllDiscussions()
+        public async Task<List<CustomDiscussionProperty>> GetAllDiscussions(int teamId)
         {
-            List<CustomDiscussionProperty> discussions = (from a in ctx.CustomDiscussions select a).ToList();
+            List<CustomDiscussionProperty> discussions = ctx.CustomDiscussions.Where(c => c.TeamId == teamId).ToList();
             return discussions;
         }
 
-        public async Task<HttpStatusCode> PostDiscussion(CustomDiscussionProperty disucssion)
+        public async Task<HttpResponseMessage> PostDiscussions(List<CustomDiscussionProperty> discussions)
         {
-            if (disucssion != null)
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
             {
-                await ctx.CustomDiscussions.AddAsync(disucssion);
-                await ctx.SaveChangesAsync();
-                return HttpStatusCode.OK;
+            if (discussions != null)
+            {
+                    foreach (var discussion in discussions)
+                    {
+                        await ctx.CustomDiscussions.AddAsync(discussion);
+                        await ctx.SaveChangesAsync();
+                    }
+                response.StatusCode = HttpStatusCode.OK;
+                response.Content = new StringContent("Succesfully added discussions!");
+                return response;
             }
-            return HttpStatusCode.NotAcceptable;
+            } 
+            catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("Failed to add discussions!");
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.NotAcceptable;
+            response.Content = new StringContent("Failed to add discussions!");
+            return response;
         }
     }
 }
