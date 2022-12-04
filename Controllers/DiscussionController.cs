@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Properties;
 using Properties.Team;
-using Sociolite.Models;
+using REST.Model.ExchangeClasses;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
 using System.Text.Json.Nodes;

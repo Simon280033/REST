@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
-using Sociolite.Models;
+using REST.Model.ExchangeClasses;
 using System.Collections.Generic;
 using System.Net;
 using System.Text.Json;

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using Properties;
 using Properties.Team;
-using Sociolite.Models;
+using REST.Model.ExchangeClasses;
 using System.Net;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;

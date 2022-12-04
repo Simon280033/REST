@@ -18,27 +18,61 @@ namespace WebAPI.Model.PollFolder
             ctx = db;
         }
 
-        public async Task<HttpStatusCode> DeletePoll(int id)
+        public async Task<HttpResponseMessage> DeletePolls(List<int> pollIds)
         {
-            var poll = await ctx.CustomPolls.Where(c => c.Id == id).FirstOrDefaultAsync();
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            var poll = await ctx.CustomPolls.Where(c => c.Id == pollIds[0]).FirstOrDefaultAsync();
             if (poll != null)
             {
                 ctx.Remove(poll);
                 var res = await ctx.SaveChangesAsync();
-                return HttpStatusCode.OK;
+                response.StatusCode = HttpStatusCode.OK;
+                response.Content = new StringContent("Succesfully deleted poll!");
+                return response;
             }
-            return HttpStatusCode.NotFound;
+            response.StatusCode = HttpStatusCode.BadRequest;
+            response.Content = new StringContent("Failed to delete poll!");
+            return response;
         }
 
-        public async Task<HttpStatusCode> PostPoll(CustomPollProperty poll)
+        public async Task<List<CustomPollProperty>> GetAllPolls(int teamId)
         {
-            if (poll != null)
+            List<CustomPollProperty> polls = ctx.CustomPolls.Where(c => c.TeamId == teamId).ToList();
+            return polls;
+        }
+
+        public async Task<HttpResponseMessage> PostPolls(List<CustomPollProperty> polls)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
             {
-                await ctx.CustomPolls.AddAsync(poll);
-                await ctx.SaveChangesAsync();
-                return HttpStatusCode.OK;
+                foreach (CustomPollProperty poll in polls)
+                {
+                    if (poll != null)
+                    {
+                        await ctx.CustomPolls.AddAsync(poll);
+                        await ctx.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Content = new StringContent("Succesfully added polls!");
+                    return response;
+                }
             }
-            return HttpStatusCode.NotAcceptable;
+            catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("Failed to add polls!");
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.NotAcceptable;
+            response.Content = new StringContent("Failed to add polls!");
+            return response;
         }
     }
 }

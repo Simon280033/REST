@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Newtonsoft.Json;
 using NuGet.Protocol;
 using Properties;
-using Sociolite.Models;
 using System.Net;
 using System.Web.Http;
 

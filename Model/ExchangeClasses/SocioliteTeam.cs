@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sociolite.Models
+namespace REST.Model.ExchangeClasses
 {
     public class SocioliteTeam
     {
