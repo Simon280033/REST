@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Identity.Client;
 using Newtonsoft.Json;
 using NuGet.Protocol;
 using Properties;
@@ -38,8 +39,28 @@ namespace WebAPI.Model.PollFolder
 
         public async Task<List<CustomPollProperty>> GetAllPolls(int teamId)
         {
+            // We get a list of polls that have already been used for the team
+            List<ActivityOccurenceProperty> activities = ctx.Activities.Where(c => c.TeamId == teamId && c.DiscussionId == 0).ToList();
+            List<int> usedPollIds = new List<int>();
+
+            foreach (var poll in activities)
+            {
+                usedPollIds.Add(poll.PollId);
+            }
+
             List<CustomPollProperty> polls = ctx.CustomPolls.Where(c => c.TeamId == teamId).ToList();
-            return polls;
+            // Then we filter out those that were already used
+            List<CustomPollProperty> unusedPolls = new List<CustomPollProperty>();
+
+            foreach (var poll in polls)
+            {
+                if (!usedPollIds.Contains(poll.Id))
+                {
+                    unusedPolls.Add(poll);
+                }
+            }
+
+            return unusedPolls;
         }
 
         public async Task<HttpResponseMessage> PostPolls(List<CustomPollProperty> polls)

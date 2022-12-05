@@ -50,8 +50,27 @@ namespace WebAPI.Model.DisccusionFolder
 
         public async Task<List<CustomDiscussionProperty>> GetAllDiscussions(int teamId)
         {
+            // We get a list of discussions that have already been used for the team
+            List<ActivityOccurenceProperty> activities = ctx.Activities.Where(c => c.TeamId == teamId && c.PollId == 0).ToList();
+            List<int> usedDiscussionIds = new List<int>();
+
+            foreach (var discussion in activities)
+            {
+                usedDiscussionIds.Add(discussion.DiscussionId);
+            }
+
             List<CustomDiscussionProperty> discussions = ctx.CustomDiscussions.Where(c => c.TeamId == teamId).ToList();
-            return discussions;
+
+            List<CustomDiscussionProperty> unusedDiscussions = new List<CustomDiscussionProperty>();
+
+            foreach (var discussion in discussions)
+            {
+                if (!usedDiscussionIds.Contains(discussion.Id))
+                {
+                    unusedDiscussions.Add(discussion);
+                }
+            }
+            return unusedDiscussions;
         }
 
         public async Task<HttpResponseMessage> PostDiscussions(List<CustomDiscussionProperty> discussions)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using REST.Model.ActivityFolder;
 using WebAPI.Model;
 using WebAPI.Model.DisccusionFolder;
 using WebAPI.Model.MembershipFolder;
@@ -26,6 +27,7 @@ namespace WebAPI
             services.AddScoped<IDiscussionContext, DiscussionContext>();
             services.AddScoped<IPollContext,PollContext>();
             services.AddScoped<IMembershipContext, MembershipContext>();
+            services.AddScoped<IActivityContext, ActivityContext>();
             services.AddDbContext<DatabaseContext>(options =>
             {
                 // options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
