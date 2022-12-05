@@ -1,5 +1,8 @@
 ﻿using Properties;
+using REST.Model.ExchangeClasses;
+using System;
 using System.Net;
+using System.Reflection.Metadata;
 using System.Threading.Channels;
 using WebAPI.Model;
 
@@ -14,8 +17,9 @@ namespace REST.Model.ActivityFolder
         {
             ctx = db;
         }
-        public async Task<HttpResponseMessage> GetNextActivityForTeam(string teamId)
+        public async Task<Tuple<HttpResponseMessage, string>> GetNextActivityForTeam(string teamId)
         {
+            string type = "poll";
             HttpResponseMessage response = new HttpResponseMessage();
             StringContent content = new StringContent("ERROR");
 
@@ -55,7 +59,7 @@ namespace REST.Model.ActivityFolder
                 var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).ToList();
                 content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0])); 
                 response.StatusCode = HttpStatusCode.OK;
-
+                type = "discussion";
                 }
                 else
             {
@@ -86,7 +90,8 @@ namespace REST.Model.ActivityFolder
                                 discussions = ctx.CustomDiscussions.Where(p => p.TeamId == 0).ToList();
                             }
                             content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0]));
-                    }
+                            type = "discussion";
+                        }
                         response.StatusCode = HttpStatusCode.OK;
                     }
                     else if (customPollsLeft && customDiscussionsLeft) // Both are present
@@ -101,7 +106,8 @@ namespace REST.Model.ActivityFolder
                     {
                         var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).ToList();
                         content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0]));
-                    }
+                        type = "discussion";
+                        }
                         response.StatusCode = HttpStatusCode.OK;
                     }
                 }
@@ -111,7 +117,35 @@ namespace REST.Model.ActivityFolder
                 response.StatusCode = HttpStatusCode.InternalServerError;
             }
             response.Content = content;
-            return response;
+            Tuple<HttpResponseMessage, string> responseAndType = new Tuple<HttpResponseMessage, string>(response, type);
+            return responseAndType;
+        }
+
+        public async Task<ActivityRequestObject> TeamAndActivityByChannelId(string channelId)
+        {
+            // We get the team
+            var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+
+            if (team != null)
+            {
+                if (!team.isActive) // CHANGE THIS TO THE OPPOSITE
+                {
+                    Tuple<HttpResponseMessage, string> contentAndType = await GetNextActivityForTeam("" + team.TeamId);
+
+                    ActivityRequestObject data = new ActivityRequestObject
+                    {
+                        IsActive = team.isActive,
+                        Type = contentAndType.Item2,
+                        RecurranceString = team.Recurring,
+                        Content = await contentAndType.Item1.Content.ReadAsStringAsync()
+                    };
+
+                    return data;
+                }
+                
+            }
+
+            return null;
         }
     }
 }

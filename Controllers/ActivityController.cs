@@ -24,7 +24,8 @@ namespace WebAPI.Controllers
         [HttpGet("{teamId}")]
         public async Task<IActionResult> GetNextActivityForTeam([FromHeader] string teamId)
         {
-            HttpResponseMessage response = await ac.GetNextActivityForTeam(teamId);
+            Tuple<HttpResponseMessage, string> responseAndType = await ac.GetNextActivityForTeam(teamId);
+            HttpResponseMessage response = responseAndType.Item1;
             string message = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
@@ -34,6 +35,14 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(message);
             }
+        }
+
+        [HttpGet("TeamAndActivityByChannelId")]
+        public async Task<IActionResult> TeamAndActivityByChannelId([FromHeader] string channelId)
+        {
+            ActivityRequestObject data = await ac.TeamAndActivityByChannelId(channelId);
+            string message = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+            return Ok(message);
         }
     }
 }

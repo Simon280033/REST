@@ -207,6 +207,25 @@ namespace WebAPI.Model.TeamFolder
             {
                 ctx.Teams.Remove(item);
             }
+
+            foreach (var item in ctx.Activities)
+            {
+                ctx.Activities.Remove(item);
+
+            }
+            foreach (var item in ctx.PollVotes)
+            {
+                ctx.PollVotes.Remove(item);
+            }
+            // Don't remove default activities
+            foreach (var item in ctx.CustomPolls.Where(x => x.TeamId != 0).ToList())
+            {
+                ctx.CustomPolls.Remove(item);
+            }
+            foreach (var item in ctx.CustomDiscussions.Where(x => x.TeamId != 0).ToList())
+            {
+                ctx.CustomDiscussions.Remove(item);
+            }
             ctx.SaveChanges();
 
             HttpResponseMessage response = new HttpResponseMessage();
@@ -236,5 +255,7 @@ namespace WebAPI.Model.TeamFolder
                 return response;
             }
         }
+
+
     }
 }

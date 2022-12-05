@@ -32,20 +32,6 @@ namespace WebAPI.Controllers
         //    return null;
         //}
 
-        // GET api/<UserController>/5
-        [HttpGet()]
-        public List<SocioliteTeamProperty> Get([FromHeader] int teamId)
-        {
-            var TeamId = team.GetTeam(teamId);
-            if (TeamId != null)
-            {
-                return TeamId;
-            }
-            return null;
-
-        }
-
-
         [HttpGet("AllTeams")]
         public List<SocioliteTeamProperty> GetAllTeams()
         {

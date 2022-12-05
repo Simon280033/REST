@@ -20,5 +20,7 @@ namespace WebAPI.Model.TeamFolder
 
         Task<HttpResponseMessage> WipeAll();
         Task<HttpResponseMessage> UpdateRecurranceString(int teamId, string recurranceString);
+
+        
     }
 }
