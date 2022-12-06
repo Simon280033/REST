@@ -322,5 +322,65 @@ namespace REST.Model.ActivityFolder
             response.StatusCode = HttpStatusCode.OK;
             return response;
         }
+
+        public async Task<HttpResponseMessage> GetLastPollResults(string channelId)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
+            {
+                // We get the latest activity
+                var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+                var latest = ctx.Activities.Where(c => c.TeamId == team.TeamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+                if (latest != null)
+                {
+                    if (!latest.Type.ToLower().Equals("poll"))
+                    {
+                        throw new Exception("Not poll!");
+                    }
+
+                    var poll = ctx.CustomPolls.Where(p => p.Id == latest.DiscussionOrPollId).FirstOrDefault();
+
+                    var answers = ctx.PollVotes.Where(v => v.ActivityOccuranceId == (latest.ActivityOccuranceId - 1)).ToList(); // TODO: I don't like having to retract 1, fix the logic...
+
+                    if (poll == null)
+                    {
+                        throw new Exception("Poll not found!");
+                    }
+
+                    List<Tuple<int, string>> answersAndRespondants = new List<Tuple<int, string>>();
+
+                    foreach (var answer in answers)
+                    {
+                        Tuple<int, string> answerNumberAndRespondant = new Tuple<int, string>(answer.VoteOptionNumber, answer.UserId); // Deduct user name from the id
+                        answersAndRespondants.Add(answerNumberAndRespondant);
+                    }
+
+                    if (answersAndRespondants.Count == 0)
+                    {
+                        Tuple<int, string> answerNumberAndRespondant = new Tuple<int, string>(1, "testhest"); // Deduct user name from the id
+                        answersAndRespondants.Add(answerNumberAndRespondant);
+                    }
+
+                    PollResultDisplayObject prdo = new PollResultDisplayObject
+                    {
+                        PollQuestion = poll.Question,
+                        PossibleAnswers = JsonConvert.DeserializeObject<List<string>>(poll.PollOptions),
+                        AnswersAndRespondants = answersAndRespondants
+                    };
+
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(prdo));
+                    return response;
+                }
+                throw new Exception("Latest activity is not a poll!");
+            } 
+            catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent(e.Message);
+                return response;
+            }
+        }
     }
 }

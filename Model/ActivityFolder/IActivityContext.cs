@@ -17,5 +17,8 @@ namespace REST.Model.ActivityFolder
         Task<HttpResponseMessage> GetActivePoll(string channelId);
 
         Task<HttpResponseMessage> GetActivePollOptionAmount(string channelId);
+
+        Task<HttpResponseMessage> GetLastPollResults(string channelId);
+
     }
 }

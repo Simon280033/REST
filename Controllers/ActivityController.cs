@@ -90,5 +90,20 @@ namespace WebAPI.Controllers
                 return BadRequest(message);
             }
         }
+
+        [HttpGet("LastPollResults")]
+        public async Task<IActionResult> GetLastPollResults([FromHeader] string channelId)
+        {
+            HttpResponseMessage response = await ac.GetLastPollResults(channelId);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
+        }
     }
 }
