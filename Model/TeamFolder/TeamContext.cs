@@ -79,27 +79,32 @@ namespace WebAPI.Model.TeamFolder
 
         }
 
-        public async Task<HttpStatusCode> ChangeActiveStatus( int teamId)
+        public async Task<HttpResponseMessage> ChangeActiveStatus(int teamId)
         {
+            HttpResponseMessage response = new HttpResponseMessage();
+
             try
             {
-                SocioliteTeamProperty user = ctx.Teams.Where(t => t.TeamId == teamId).First();
+                SocioliteTeamProperty team = ctx.Teams.Where(t => t.TeamId == teamId).First();
                 
-                    if (user.isActive)
+                    if (team.isActive)
                     {
-                        user.isActive = false;
+                        team.isActive = false;
                     }
                     else
                     {
-                        user.isActive = true;
+                        team.isActive = true;
                     }
                     await ctx.SaveChangesAsync();
-                    return HttpStatusCode.OK;
-                
+                response.StatusCode = HttpStatusCode.OK;
+                response.Content = new StringContent("" + !team.isActive);
+                return response;
             }
             catch(Exception e)
             {
-                return HttpStatusCode.NotFound;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("ERROR: Something went wrong!");
+                return response;
             }
         }
 

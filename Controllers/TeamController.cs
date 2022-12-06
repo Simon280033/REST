@@ -85,12 +85,19 @@ namespace WebAPI.Controllers
         }
 
 
-        [HttpPut("{teamId}")]
-        public async Task<HttpStatusCode> Put(int teamId)
+        [HttpGet("ToggleActiveStatus/{teamId}")]
+        public async Task<IActionResult> ToggleActiveStatus([FromHeader] int teamId)
         {
-            
-            return await team.ChangeActiveStatus(teamId);
-            //return 0;
+            HttpResponseMessage response = await team.ChangeActiveStatus(teamId);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
         }
 
         // DELETE api/<UserController>/5

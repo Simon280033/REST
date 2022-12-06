@@ -51,12 +51,12 @@ namespace WebAPI.Model.DisccusionFolder
         public async Task<List<CustomDiscussionProperty>> GetAllDiscussions(int teamId)
         {
             // We get a list of discussions that have already been used for the team
-            List<ActivityOccurenceProperty> activities = ctx.Activities.Where(c => c.TeamId == teamId && c.PollId == 0).ToList();
+            List<ActivityOccurenceProperty> activities = ctx.Activities.Where(c => c.TeamId == teamId && c.Type.ToLower().Equals("discussion")).ToList();
             List<int> usedDiscussionIds = new List<int>();
 
             foreach (var discussion in activities)
             {
-                usedDiscussionIds.Add(discussion.DiscussionId);
+                usedDiscussionIds.Add(discussion.DiscussionOrPollId);
             }
 
             List<CustomDiscussionProperty> discussions = ctx.CustomDiscussions.Where(c => c.TeamId == teamId).ToList();

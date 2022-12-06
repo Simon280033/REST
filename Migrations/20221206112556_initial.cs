@@ -15,10 +15,11 @@ namespace REST.Migrations
                 name: "Activity_Occurrence",
                 columns: table => new
                 {
+                    ActivityOccuranceId = table.Column<int>(type: "int", nullable: false),
                     TeamId = table.Column<int>(type: "int", nullable: false),
-                    ActivityOccuranceId = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PollId = table.Column<int>(type: "int", nullable: false),
-                    DiscussionId = table.Column<int>(type: "int", nullable: false)
+                    OcurredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DiscussionOrPollId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {

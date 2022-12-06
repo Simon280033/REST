@@ -1,4 +1,6 @@
-﻿using Properties;
+﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Properties;
 using REST.Model.ExchangeClasses;
 using System;
 using System.Net;
@@ -17,6 +19,76 @@ namespace REST.Model.ActivityFolder
         {
             ctx = db;
         }
+
+        public async Task<HttpResponseMessage> GetActivePoll(string channelId)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
+            {
+            // We get the latest activity
+            var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+            var latest = ctx.Activities.Where(c => c.TeamId == team.TeamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+            if (latest != null)
+            {
+                if (latest.Type.ToLower().Equals("poll"))
+                    {
+                        var poll = ctx.CustomPolls.Where(p => p.Id == latest.DiscussionOrPollId).FirstOrDefault();
+                        response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(poll));
+                        response.StatusCode = HttpStatusCode.OK;
+                        return response;
+                    }
+                    else
+                    {
+                        throw new Exception("Current activity is not poll!");
+                    }
+            }
+            } catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent(e.Message);
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.InternalServerError;
+            response.Content = new StringContent("Failed to get active poll!");
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> GetActivePollOptionAmount(string channelId)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
+            {
+                // We get the latest activity
+                var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+                var latest = ctx.Activities.Where(c => c.TeamId == team.TeamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+                if (latest != null)
+                {
+                    if (latest.Type.ToLower().Equals("poll"))
+                    {
+                        var poll = ctx.CustomPolls.Where(p => p.Id == latest.DiscussionOrPollId).FirstOrDefault();
+                        response.Content = new StringContent("" + JsonConvert.DeserializeObject<List<string>>(poll.PollOptions).Count());
+                        response.StatusCode = HttpStatusCode.OK;
+                        return response;
+                    }
+                    else
+                    {
+                        throw new Exception("Current activity is not poll!");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent(e.Message);
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.InternalServerError;
+            response.Content = new StringContent("Failed to get active poll!");
+            return response;
+        }
+
         public async Task<Tuple<HttpResponseMessage, string>> GetNextActivityForTeam(string teamId)
         {
             string type = "poll";
@@ -25,21 +97,21 @@ namespace REST.Model.ActivityFolder
 
             try { 
             // We get a list of polls that have already been used for the team
-            List<ActivityOccurenceProperty> pollActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.DiscussionId == 0).ToList();
+            List<ActivityOccurenceProperty> pollActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.Type.ToLower().Equals("poll")).ToList();
             List<int> usedPollIds = new List<int>();
 
             foreach (var poll in pollActivities)
             {
-                usedPollIds.Add(poll.DiscussionId);
+                usedPollIds.Add(poll.DiscussionOrPollId);
             }
 
             // We get a list of discussions that have already been used for the team
-            List<ActivityOccurenceProperty> discussionActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.PollId == 0).ToList();
+            List<ActivityOccurenceProperty> discussionActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.Type.ToLower().Equals("discussion")).ToList();
             List<int> usedDiscussionIds = new List<int>();
 
             foreach (var discussion in discussionActivities)
             {
-                usedDiscussionIds.Add(discussion.DiscussionId);
+                usedDiscussionIds.Add(discussion.DiscussionOrPollId);
             }
 
             bool customPollsLeft = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).Any();
@@ -65,7 +137,9 @@ namespace REST.Model.ActivityFolder
             {
                 Random rand = new Random();
 
-                bool returnPoll = (rand.Next(0, 2) == 0);
+                    //bool returnPoll = (rand.Next(0, 2) == 0);
+                    bool returnPoll = true;
+
 
                     // No custom activities at all
                     if (!customPollsLeft && !customDiscussionsLeft)
@@ -121,6 +195,21 @@ namespace REST.Model.ActivityFolder
             return responseAndType;
         }
 
+        public async Task<HttpResponseMessage> LastActivityType(string channelId)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+            response.Content = new StringContent("No previous activity");
+
+            // We get the latest activity
+            var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+            var latest = ctx.Activities.Where(c => c.TeamId == team.TeamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+            if (latest != null)
+            {
+                response.Content = new StringContent(latest.Type);
+            }
+            return response;
+        }
+
         public async Task<ActivityRequestObject> TeamAndActivityByChannelId(string channelId)
         {
             // We get the team
@@ -128,24 +217,110 @@ namespace REST.Model.ActivityFolder
 
             if (team != null)
             {
-                if (!team.isActive) // CHANGE THIS TO THE OPPOSITE
+                if (team.isActive)
                 {
                     Tuple<HttpResponseMessage, string> contentAndType = await GetNextActivityForTeam("" + team.TeamId);
+
+                    string content = await contentAndType.Item1.Content.ReadAsStringAsync();
 
                     ActivityRequestObject data = new ActivityRequestObject
                     {
                         IsActive = team.isActive,
                         Type = contentAndType.Item2,
                         RecurranceString = team.Recurring,
-                        Content = await contentAndType.Item1.Content.ReadAsStringAsync()
+                        Content = content
                     };
+
+                    // We log this occurance
+                    int discussionOrPollId = 0;
+                    if (contentAndType.Item2.Equals("poll"))
+                    {
+                        discussionOrPollId = JsonConvert.DeserializeObject<CustomPollProperty>(content).Id;
+                    } else
+                    {
+                        discussionOrPollId = JsonConvert.DeserializeObject<CustomDiscussionProperty>(content).Id;
+                    }
+
+                    ActivityOccurenceProperty aop = new ActivityOccurenceProperty
+                    {
+                        ActivityOccuranceId = ctx.Activities.Count(me => me != null) + 1,
+                        TeamId = team.TeamId,
+                        OcurredAt = DateTime.Now,
+                        Type = contentAndType.Item2,
+                        DiscussionOrPollId = discussionOrPollId
+                    };
+
+                    ctx.Activities.Add(aop);
+                    ctx.SaveChanges();
 
                     return data;
                 }
                 
             }
 
-            return null;
+            ActivityRequestObject emptyData = new ActivityRequestObject
+            {
+                IsActive = team.isActive,
+                Type = "none",
+                RecurranceString = team.Recurring,
+                Content = "none"
+            };
+
+            return emptyData; // Do something with this...
+        }
+
+        public async Task<HttpResponseMessage> Vote(string channelId, string userId, int optionNumber)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            try
+            {
+                var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+                if (team == null)
+                {
+                    throw new Exception();
+                }
+
+                int teamId = team.TeamId;
+
+            var activity = ctx.Activities.Where(c => c.TeamId == teamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+
+            if (activity != null)
+            {
+                PollVoteProperty pvp = new PollVoteProperty
+                {
+                    UserId = userId,
+                    ActivityOccuranceId = activity.ActivityOccuranceId,
+                    VoteOptionNumber = optionNumber
+                };
+
+                bool alreadyVoted = ctx.PollVotes.Where(v => v.UserId.Equals(userId) && v.ActivityOccuranceId == activity.ActivityOccuranceId).Any();
+
+                if (alreadyVoted)
+                {
+                    PollVoteProperty vote = ctx.PollVotes.Where(v => v.UserId.Equals(userId) && v.ActivityOccuranceId == activity.ActivityOccuranceId).FirstOrDefault();
+                    vote.VoteOptionNumber = optionNumber;
+                    ctx.SaveChanges();
+                    response.Content = new StringContent("Succesfully updated your vote!");
+                    }
+                    else
+                {
+                    ctx.PollVotes.Add(pvp);
+                    ctx.SaveChanges();
+                    response.Content = new StringContent("Succesfully added your vote!");
+                    }
+                } else
+                {
+                    throw new Exception();
+                }
+            } catch (Exception e)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Content = new StringContent("Failed to add/update vote!");
+                return response;
+            }
+            response.StatusCode = HttpStatusCode.OK;
+            return response;
         }
     }
 }

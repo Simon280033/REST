@@ -13,7 +13,7 @@ namespace WebAPI.Model.TeamFolder
         List<SocioliteTeamProperty> GetTeams();
         int PutTeam(string recurrence, int teamId);
 
-        Task<HttpStatusCode> ChangeActiveStatus(int teamId);
+        Task<HttpResponseMessage> ChangeActiveStatus(int teamId);
         Task<HttpResponseMessage> PostTeam(string channelID);
         Task<HttpStatusCode> DeleteTeam(int id);
         List<SocioliteTeamProperty> GetUnconnectedTeams();

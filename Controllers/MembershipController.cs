@@ -59,24 +59,8 @@ namespace WebAPI.Controllers
             }
         }
 
-        // PUT api/<UserController>/5
-        [HttpPut("Update")]
-        public async Task<IActionResult> UpdateMembership([FromHeader] int teamId, [FromHeader] string userId, [FromHeader] string newRole)
-        {
-            HttpResponseMessage response = await membership.UpdateMembership(teamId, userId, newRole);
-            string message = await response.Content.ReadAsStringAsync();
-            if (response.IsSuccessStatusCode)
-            {
-                return Ok(message);
-            }
-            else
-            {
-                return BadRequest(message);
-            }
-        }
-
-        [HttpPost("Update2")]
-        public async Task<IActionResult> UpdateMembership2([FromBody] MembershipRequest test)
+        [HttpPost("Update")]
+        public async Task<IActionResult> UpdateMembership([FromBody] MembershipRequest test)
         {
             HttpResponseMessage response = await membership.UpdateMembership(test.teamId, test.userId, test.newRole);
             string message = await response.Content.ReadAsStringAsync();

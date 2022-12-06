@@ -25,18 +25,19 @@ namespace REST.Migrations
             modelBuilder.Entity("Properties.ActivityOccurenceProperty", b =>
                 {
                     b.Property<int>("TeamId")
-                        .HasColumnType("int")
-                        .HasColumnOrder(0);
-
-                    b.Property<DateTime>("ActivityOccuranceId")
-                        .HasColumnType("datetime2")
-                        .HasColumnOrder(1);
-
-                    b.Property<int>("DiscussionId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PollId")
+                    b.Property<int>("ActivityOccuranceId")
                         .HasColumnType("int");
+
+                    b.Property<int>("DiscussionOrPollId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OcurredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("TeamId", "ActivityOccuranceId");
 

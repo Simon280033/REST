@@ -40,12 +40,12 @@ namespace WebAPI.Model.PollFolder
         public async Task<List<CustomPollProperty>> GetAllPolls(int teamId)
         {
             // We get a list of polls that have already been used for the team
-            List<ActivityOccurenceProperty> activities = ctx.Activities.Where(c => c.TeamId == teamId && c.DiscussionId == 0).ToList();
+            List<ActivityOccurenceProperty> activities = ctx.Activities.Where(c => c.TeamId == teamId && c.Type.ToLower().Equals("poll")).ToList();
             List<int> usedPollIds = new List<int>();
 
             foreach (var poll in activities)
             {
-                usedPollIds.Add(poll.PollId);
+                usedPollIds.Add(poll.DiscussionOrPollId);
             }
 
             List<CustomPollProperty> polls = ctx.CustomPolls.Where(c => c.TeamId == teamId).ToList();

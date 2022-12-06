@@ -44,5 +44,51 @@ namespace WebAPI.Controllers
             string message = Newtonsoft.Json.JsonConvert.SerializeObject(data);
             return Ok(message);
         }
+
+        [HttpGet("LatestActivityType")]
+        public async Task<IActionResult> LatestActivityType([FromHeader] string channelId)
+        {
+            HttpResponseMessage response = await ac.LastActivityType(channelId);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
+        }
+
+
+        [HttpPost("Vote")]
+        public async Task<IActionResult> Vote([FromHeader] string channelId, [FromHeader] string userId, [FromHeader] int optionNumber)
+        {
+            HttpResponseMessage response = await ac.Vote(channelId, userId, optionNumber);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
+        }
+
+        [HttpGet("ActivePoll")]
+        public async Task<IActionResult> GetActivePoll([FromHeader] string channelId)
+        {
+            HttpResponseMessage response = await ac.GetActivePollOptionAmount(channelId);
+            string message = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(message);
+            }
+            else
+            {
+                return BadRequest(message);
+            }
+        }
     }
 }

@@ -30,4 +30,8 @@
     <ProjectReference Include="..\Properties\Properties.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>
