@@ -260,9 +260,9 @@ namespace REST.Model.ActivityFolder
 
             ActivityRequestObject emptyData = new ActivityRequestObject
             {
-                IsActive = team.isActive,
+                IsActive = true,
                 Type = "none",
-                RecurranceString = team.Recurring,
+                RecurranceString = "00000000000",
                 Content = "none"
             };
 
@@ -350,9 +350,27 @@ namespace REST.Model.ActivityFolder
 
                     List<Tuple<int, string>> answersAndRespondants = new List<Tuple<int, string>>();
 
+                    List<string> userIds = new List<string>();
+
                     foreach (var answer in answers)
                     {
-                        Tuple<int, string> answerNumberAndRespondant = new Tuple<int, string>(answer.VoteOptionNumber, answer.UserId); // Deduct user name from the id
+                        userIds.Add(answer.UserId); 
+                    }
+
+                    var users = ctx.Users.Where(u => userIds.Contains(u.MSTeamsId)).ToList();
+
+                    foreach (var answer in answers)
+                    {
+                        string userName = "Unnamed user";
+
+                        foreach(var user in users)
+                        {
+                            if (user.MSTeamsId.Equals(answer.UserId))
+                            {
+                                userName = user.FirstName;
+                            }
+                        }
+                        Tuple<int, string> answerNumberAndRespondant = new Tuple<int, string>(answer.VoteOptionNumber, userName); // Deduct user name from the id
                         answersAndRespondants.Add(answerNumberAndRespondant);
                     }
 

@@ -103,9 +103,32 @@ namespace WebAPI.Model.MembershipFolder
 
             if (!userExists)
             {
+                    string name = "Unnamed user";
+                    bool found = false;
+
+                    foreach(var team in teamsWithChannels)
+                    {
+                        foreach(var member in team.Members)
+                        {
+                            if(member.Id.Equals(userId))
+                            {
+                                name = member.Name;
+                                found = true;
+                                break;
+                            }
+                            if(found)
+                            {
+                                break;
+                            }
+                        }
+                        if (found)
+                        {
+                            break;
+                        }
+                    }
                 UserProperty user = new UserProperty();
                 user.MSTeamsId = userId;
-                user.FirstName = "";
+                user.FirstName = name;
                 ctx.Users.Add(user);
                 await ctx.SaveChangesAsync();
             }
@@ -145,25 +168,44 @@ namespace WebAPI.Model.MembershipFolder
                             result.Name = team.Name;
                             ctx.SaveChanges();
 
-                            // We check if the team already has members, if this is the first, we add as manager
-                            bool firstMember = !ctx.TeamMemberships.Where(m => m.TeamId.Equals(result.TeamId)).Any();
+                            // We create memberships for all the users
+                            foreach (var member in team.Members)
+                                {
+                                    // We create the user if they don't already exist
+                                    bool thisUserExists = ctx.Users.Where(user => user.MSTeamsId.Equals(member.Id)).Any();
 
-                            string role = "Scheduler";
+                                    if (!thisUserExists)
+                                    {
+                                        UserProperty user = new UserProperty();
+                                        user.MSTeamsId = member.Id;
+                                        user.FirstName = member.Name;
+                                        ctx.Users.Add(user);
+                                        await ctx.SaveChangesAsync();
+                                    }
 
-                            if (firstMember)
-                            {
-                                role = "Manager";
-                            }
+                                    // Then we create the memberships if they don't exist
+                                    bool isMember = ctx.TeamMemberships.Where(m => m.UserId.Equals(member.Id) && m.TeamId.Equals(result.TeamId)).Any();
 
-                            // We create the membership
-                            SocioliteTeamMembershipProperty membership = new SocioliteTeamMembershipProperty{
-                                UserId = userId,
-                                TeamId = result.TeamId,
-                                TeamSpecificRole = role
-                            };
+                                    if (!isMember)
+                                    {
+                                        string role = "Default";
 
-                            ctx.TeamMemberships.Add(membership);
-                            await ctx.SaveChangesAsync();
+                                        if(member.Id.Equals(userId))
+                                        {
+                                            role = "Manager";
+                                        }
+
+                                        SocioliteTeamMembershipProperty membership = new SocioliteTeamMembershipProperty
+                                        {
+                                            UserId = member.Id,
+                                            TeamId = result.TeamId,
+                                            TeamSpecificRole = role
+                                        };
+
+                                        ctx.TeamMemberships.Add(membership);
+                                        await ctx.SaveChangesAsync();
+                                    }
+                                }
 
                             tiedTo++;
                         }
