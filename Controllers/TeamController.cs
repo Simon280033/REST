@@ -1,14 +1,5 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.ResponseCompression;
-using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.Mvc;
 using Properties;
-using Properties.Team;
-using System.Collections.Generic;
-using System.Net;
-using System.Text.Json.Nodes;
-using WebAPI.Model;
 using WebAPI.Model.TeamFolder;
 
 namespace WebAPI.Controllers
@@ -23,14 +14,6 @@ namespace WebAPI.Controllers
         {
             this.team = team;
         }
-        // GET: api/<UserController>
-        //[HttpGet]
-        //public List<string> Get()
-        //{
-
-        //    //return team.GetTeams();
-        //    return null;
-        //}
 
         [HttpGet("AllTeams")]
         public List<SocioliteTeamProperty> GetAllTeams()
@@ -60,7 +43,6 @@ namespace WebAPI.Controllers
             return team.GetUnconnectedTeams();
         }
 
-        // POST api/<UserController>
         [HttpPost]
         public async Task<IActionResult> Post([FromHeader] string channelId)
         {
@@ -69,21 +51,12 @@ namespace WebAPI.Controllers
             if (response.IsSuccessStatusCode)
             {
                 return Ok(message);
-            } else
+            }
+            else
             {
                 return BadRequest(message);
             }
         }
-
-        // PUT api/<UserController>/5
-        [HttpPut()]
-        public int Put([FromHeader] int teamId, [FromBody] JsonObject Recurring)
-        {
-            string re = Recurring.First().Value.ToString();
-            return team.PutTeam(re, teamId);
-            //return 0;
-        }
-
 
         [HttpGet("ToggleActiveStatus/{teamId}")]
         public async Task<IActionResult> ToggleActiveStatus([FromHeader] int teamId)
@@ -100,7 +73,6 @@ namespace WebAPI.Controllers
             }
         }
 
-        // DELETE api/<UserController>/5
         [HttpDelete("WipeAll")]
         public async Task<IActionResult> WipeAll()
         {

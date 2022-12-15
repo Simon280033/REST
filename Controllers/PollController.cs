@@ -1,15 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Properties;
-using Properties.Team;
 using REST.Model.ExchangeClasses;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Net;
-using System.Text.Json.Nodes;
-using WebAPI.Model;
-using WebAPI.Model.DisccusionFolder;
 using WebAPI.Model.PollFolder;
-using WebAPI.Model.TeamFolder;
 
 namespace WebAPI.Controllers
 {
@@ -23,15 +15,13 @@ namespace WebAPI.Controllers
         {
             this.PollContext = poll;
         }
-        
 
-        // POST api/<UserController>
         [HttpPost("{teamId}")]
         public async Task<IActionResult> Post([FromBody] List<SociolitePoll> polls, [FromHeader] string teamId)
         {
             List<CustomPollProperty> customPollProperties = new List<CustomPollProperty>();
 
-            foreach(var poll in polls)
+            foreach (var poll in polls)
             {
                 CustomPollProperty pollToAdd = new CustomPollProperty
                 {
@@ -44,7 +34,7 @@ namespace WebAPI.Controllers
                 };
                 customPollProperties.Add(pollToAdd);
             }
-            
+
             HttpResponseMessage response = await PollContext.PostPolls(customPollProperties);
             string message = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
@@ -57,15 +47,13 @@ namespace WebAPI.Controllers
             }
         }
 
-        
 
-        // DELETE api/<UserController>/5
         [HttpPut("{teamId}")]
         public async Task<IActionResult> Delete([FromBody] List<SociolitePoll> polls, [FromHeader] string teamId)
         {
             List<int> pollIds = new List<int>();
 
-            foreach(var poll in polls)
+            foreach (var poll in polls)
             {
                 pollIds.Add(Int32.Parse(poll.Id));
             }
@@ -85,7 +73,6 @@ namespace WebAPI.Controllers
         [HttpGet("{teamId}")]
         public async Task<List<CustomPollProperty>> Get([FromHeader] string teamId)
         {
-            // WE NEED TO ALTER THIS SO IT ONLY RETURNS polls WHICH HAVE NOT ALREADY BEEN USED
             return await PollContext.GetAllPolls(Int32.Parse(teamId));
         }
 

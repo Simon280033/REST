@@ -1,6 +1,5 @@
 //using WebAPI.DataAccess;
 using WebAPI;
-using Microsoft.EntityFrameworkCore;
 using WebAPI.Model;
 
 public class Program
@@ -16,9 +15,9 @@ public class Program
             {
                 var context = services.GetRequiredService<DatabaseContext>();
 
+                // UNCOMMENT ON NEW MIGRATION
                 //context.Database.EnsureCreated();
                 //context.Database.Migrate();
-
 
             }
             catch (Exception ex)

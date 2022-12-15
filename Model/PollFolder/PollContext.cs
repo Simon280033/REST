@@ -1,12 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.Identity.Client;
-using Newtonsoft.Json;
-using NuGet.Protocol;
+﻿using Microsoft.EntityFrameworkCore;
 using Properties;
 using System.Net;
-using System.Web.Http;
 
 namespace WebAPI.Model.PollFolder
 {

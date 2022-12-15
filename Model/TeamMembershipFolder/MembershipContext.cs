@@ -1,13 +1,8 @@
-﻿using Azure;
-using Microsoft.CodeAnalysis;
-using Newtonsoft.Json.Linq;
+﻿using Microsoft.CodeAnalysis;
 using Properties;
 using Properties.Team;
 using REST.Model.ExchangeClasses;
-using System.Collections.Generic;
 using System.Net;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace WebAPI.Model.MembershipFolder
 {
@@ -20,18 +15,14 @@ namespace WebAPI.Model.MembershipFolder
         {
             ctx = db;
         }
-        public Task<int> DeleteMembership(int id)
-        {
-            throw new NotImplementedException();
-        }
 
         public List<Object> GetMembership(List<int> data)
         {
             List<Object> list = new List<Object>();
-            var teams = ctx.TeamMemberships.Where(t=> t.UserId.Equals(data[0])).ToList();
+            var teams = ctx.TeamMemberships.Where(t => t.UserId.Equals(data[0])).ToList();
 
-
-            foreach (var theTeam in teams) {
+            foreach (var theTeam in teams)
+            {
                 List<UserProperty> AllUsers = new List<UserProperty>();
                 List<string> Roles = new List<string>();
 
@@ -47,7 +38,7 @@ namespace WebAPI.Model.MembershipFolder
 
                 List<CustomPollProperty> polls = ctx.CustomPolls.Where(t => t.TeamId == theTeam.TeamId).ToList();
                 List<CustomDiscussionProperty> discussions = ctx.CustomDiscussions.Where(t => t.TeamId == theTeam.TeamId).ToList();
-                
+
                 if (polls.Any())
                 {
                     list.Add(polls);
@@ -58,11 +49,7 @@ namespace WebAPI.Model.MembershipFolder
                 }
 
             }
-
-
-
             return list;
-
         }
 
         public async Task<List<SocioliteTeamMembershipProperty>> GetMemberships()
@@ -79,44 +66,44 @@ namespace WebAPI.Model.MembershipFolder
 
             try
             {
-            // We get a list of the total channel IDs
-            List<string> totalChannelIds = new List<string>();  
+                // We get a list of the total channel IDs
+                List<string> totalChannelIds = new List<string>();
 
-            foreach (var team in teamsWithChannels)
-            {
-                totalChannelIds.AddRange(team.TeamsChannelIds);
-            }
+                foreach (var team in teamsWithChannels)
+                {
+                    totalChannelIds.AddRange(team.TeamsChannelIds);
+                }
 
-            // First, we check if there are any teams with any of the supplied channel IDs
-            var teams = ctx.Teams.Where(t => totalChannelIds.Any(id => id.Equals(t.MSTeamsChannelId))).ToList();
+                // First, we check if there are any teams with any of the supplied channel IDs
+                var teams = ctx.Teams.Where(t => totalChannelIds.Any(id => id.Equals(t.MSTeamsChannelId))).ToList();
 
-            // If there isn't, we return a bad statuscode
-            if (teams.Count == 0)
-            {
+                // If there isn't, we return a bad statuscode
+                if (teams.Count == 0)
+                {
                     response.StatusCode = HttpStatusCode.NotFound;
                     response.Content = new StringContent("ERROR: No teams with channel IDs supplied!");
                     return response;
-            }
+                }
 
-            // We create the user if they don't already exist
-            bool userExists = ctx.Users.Where(user => user.MSTeamsId.Equals(userId)).Any();
+                // We create the user if they don't already exist
+                bool userExists = ctx.Users.Where(user => user.MSTeamsId.Equals(userId)).Any();
 
-            if (!userExists)
-            {
+                if (!userExists)
+                {
                     string name = "Unnamed user";
                     bool found = false;
 
-                    foreach(var team in teamsWithChannels)
+                    foreach (var team in teamsWithChannels)
                     {
-                        foreach(var member in team.Members)
+                        foreach (var member in team.Members)
                         {
-                            if(member.Id.Equals(userId))
+                            if (member.Id.Equals(userId))
                             {
                                 name = member.Name;
                                 found = true;
                                 break;
                             }
-                            if(found)
+                            if (found)
                             {
                                 break;
                             }
@@ -126,50 +113,50 @@ namespace WebAPI.Model.MembershipFolder
                             break;
                         }
                     }
-                UserProperty user = new UserProperty();
-                user.MSTeamsId = userId;
-                user.FirstName = name;
-                ctx.Users.Add(user);
-                await ctx.SaveChangesAsync();
-            }
-            else // If the user already existed, we filter out the channel IDs for teams where the user was already a member
-            {
-                List<string> channelsToLink = new List<string>();
-                List<int> teamsAlreadyPartOf = new List<int>();
-
-                var memberships = ctx.TeamMemberships.Where(membership => membership.UserId.Equals(userId)).ToList();
-
-                foreach (var membership in memberships)
-                {
-                    teamsAlreadyPartOf.Add(membership.TeamId);
+                    UserProperty user = new UserProperty();
+                    user.MSTeamsId = userId;
+                    user.FirstName = name;
+                    ctx.Users.Add(user);
+                    await ctx.SaveChangesAsync();
                 }
-
-                foreach (var team in teams)
+                else // If the user already existed, we filter out the channel IDs for teams where the user was already a member
                 {
-                    channelsToLink.Add(team.MSTeamsChannelId);
-                }
+                    List<string> channelsToLink = new List<string>();
+                    List<int> teamsAlreadyPartOf = new List<int>();
 
-                totalChannelIds = channelsToLink;
-            }
+                    var memberships = ctx.TeamMemberships.Where(membership => membership.UserId.Equals(userId)).ToList();
 
-            // Then we create memberships for each of them
-            foreach(var channel in totalChannelIds)
-            {
-                // We get the appropriate team
-                foreach(var team in teamsWithChannels)
-                {
-                    if (team.TeamsChannelIds.Contains(channel))
+                    foreach (var membership in memberships)
                     {
-                        // We add MS Teams ID to team
-                        var result = ctx.Teams.SingleOrDefault(b => b.MSTeamsChannelId.Equals(channel));
-                        if (result != null)
-                        {
-                            result.MSTeamsTeamId = team.TeamsTeamId;
-                            result.Name = team.Name;
-                            ctx.SaveChanges();
+                        teamsAlreadyPartOf.Add(membership.TeamId);
+                    }
 
-                            // We create memberships for all the users
-                            foreach (var member in team.Members)
+                    foreach (var team in teams)
+                    {
+                        channelsToLink.Add(team.MSTeamsChannelId);
+                    }
+
+                    totalChannelIds = channelsToLink;
+                }
+
+                // Then we create memberships for each of them
+                foreach (var channel in totalChannelIds)
+                {
+                    // We get the appropriate team
+                    foreach (var team in teamsWithChannels)
+                    {
+                        if (team.TeamsChannelIds.Contains(channel))
+                        {
+                            // We add MS Teams ID to team
+                            var result = ctx.Teams.SingleOrDefault(b => b.MSTeamsChannelId.Equals(channel));
+                            if (result != null)
+                            {
+                                result.MSTeamsTeamId = team.TeamsTeamId;
+                                result.Name = team.Name;
+                                ctx.SaveChanges();
+
+                                // We create memberships for all the users
+                                foreach (var member in team.Members)
                                 {
                                     // We create the user if they don't already exist
                                     bool thisUserExists = ctx.Users.Where(user => user.MSTeamsId.Equals(member.Id)).Any();
@@ -190,7 +177,7 @@ namespace WebAPI.Model.MembershipFolder
                                     {
                                         string role = "Default";
 
-                                        if(member.Id.Equals(userId))
+                                        if (member.Id.Equals(userId))
                                         {
                                             role = "Manager";
                                         }
@@ -207,13 +194,13 @@ namespace WebAPI.Model.MembershipFolder
                                     }
                                 }
 
-                            tiedTo++;
+                                tiedTo++;
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
-            } 
             catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
@@ -257,7 +244,7 @@ namespace WebAPI.Model.MembershipFolder
                     membership.TeamSpecificRole = newRole;
                     ctx.TeamMemberships.Add(membership);
                     await ctx.SaveChangesAsync();
-                } 
+                }
                 else // Otherwise, we update it
                 {
                     var result = ctx.TeamMemberships.SingleOrDefault(membership => membership.UserId.Equals(userId) && membership.TeamId.Equals(teamId));
@@ -266,7 +253,8 @@ namespace WebAPI.Model.MembershipFolder
 
                     await ctx.SaveChangesAsync();
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
                 response.Content = new StringContent("ERROR: Something went wrong!");

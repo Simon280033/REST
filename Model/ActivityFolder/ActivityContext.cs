@@ -1,11 +1,7 @@
-﻿using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Properties;
 using REST.Model.ExchangeClasses;
-using System;
 using System.Net;
-using System.Reflection.Metadata;
-using System.Threading.Channels;
 using WebAPI.Model;
 
 namespace REST.Model.ActivityFolder
@@ -26,12 +22,12 @@ namespace REST.Model.ActivityFolder
 
             try
             {
-            // We get the latest activity
-            var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
-            var latest = ctx.Activities.Where(c => c.TeamId == team.TeamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
-            if (latest != null)
-            {
-                if (latest.Type.ToLower().Equals("poll"))
+                // We get the latest activity
+                var team = ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelId)).FirstOrDefault();
+                var latest = ctx.Activities.Where(c => c.TeamId == team.TeamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+                if (latest != null)
+                {
+                    if (latest.Type.ToLower().Equals("poll"))
                     {
                         var poll = ctx.CustomPolls.Where(p => p.Id == latest.DiscussionOrPollId).FirstOrDefault();
                         response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(poll));
@@ -42,8 +38,9 @@ namespace REST.Model.ActivityFolder
                     {
                         throw new Exception("Current activity is not poll!");
                     }
+                }
             }
-            } catch (Exception e)
+            catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
                 response.Content = new StringContent(e.Message);
@@ -95,69 +92,69 @@ namespace REST.Model.ActivityFolder
             HttpResponseMessage response = new HttpResponseMessage();
             StringContent content = new StringContent("ERROR");
 
-            try { 
-            // We get a list of polls that have already been used for the team
-            List<ActivityOccurenceProperty> pollActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.Type.ToLower().Equals("poll")).ToList();
-            List<int> usedPollIds = new List<int>();
-
-            foreach (var poll in pollActivities)
+            try
             {
-                usedPollIds.Add(poll.DiscussionOrPollId);
-            }
+                // We get a list of polls that have already been used for the team
+                List<ActivityOccurenceProperty> pollActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.Type.ToLower().Equals("poll")).ToList();
+                List<int> usedPollIds = new List<int>();
 
-            // We get a list of discussions that have already been used for the team
-            List<ActivityOccurenceProperty> discussionActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.Type.ToLower().Equals("discussion")).ToList();
-            List<int> usedDiscussionIds = new List<int>();
+                foreach (var poll in pollActivities)
+                {
+                    usedPollIds.Add(poll.DiscussionOrPollId);
+                }
 
-            foreach (var discussion in discussionActivities)
-            {
-                usedDiscussionIds.Add(discussion.DiscussionOrPollId);
-            }
+                // We get a list of discussions that have already been used for the team
+                List<ActivityOccurenceProperty> discussionActivities = ctx.Activities.Where(c => c.TeamId == Int32.Parse(teamId) && c.Type.ToLower().Equals("discussion")).ToList();
+                List<int> usedDiscussionIds = new List<int>();
 
-            bool customPollsLeft = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).Any();
-            bool customDiscussionsLeft = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).Any();
+                foreach (var discussion in discussionActivities)
+                {
+                    usedDiscussionIds.Add(discussion.DiscussionOrPollId);
+                }
 
-            // Scenarios:
+                bool customPollsLeft = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).Any();
+                bool customDiscussionsLeft = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).Any();
 
-            // No custom discs, but custom polls
-            if (customPollsLeft && !customDiscussionsLeft)
-            {
-                var polls = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).ToList();
-                content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(polls[0]));
-                response.StatusCode = HttpStatusCode.OK;
-            }
-            else if (!customPollsLeft && customDiscussionsLeft) // No custom polls, but custom discs
-            {
-                var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).ToList();
-                content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0])); 
-                response.StatusCode = HttpStatusCode.OK;
-                type = "discussion";
+                // Scenarios:
+
+                // No custom discs, but custom polls
+                if (customPollsLeft && !customDiscussionsLeft)
+                {
+                    var polls = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).ToList();
+                    content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(polls[0]));
+                    response.StatusCode = HttpStatusCode.OK;
+                }
+                else if (!customPollsLeft && customDiscussionsLeft) // No custom polls, but custom discs
+                {
+                    var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).ToList();
+                    content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0]));
+                    response.StatusCode = HttpStatusCode.OK;
+                    type = "discussion";
                 }
                 else
-            {
-                Random rand = new Random();
+                {
+                    Random rand = new Random();
 
-                    //bool returnPoll = (rand.Next(0, 2) == 0);
-                    bool returnPoll = true;
-
+                    bool returnPoll = (rand.Next(0, 2) == 0);
 
                     // No custom activities at all
                     if (!customPollsLeft && !customDiscussionsLeft)
-                {
-                    // 50/50 to return either a default poll or discussion that has not been used 
-                    if (returnPoll)
                     {
-                        var polls = ctx.CustomPolls.Where(p => p.TeamId == 0 && !usedPollIds.Contains(p.Id)).ToList();
+                        // 50/50 to return either a default poll or discussion that has not been used 
+                        if (returnPoll)
+                        {
+                            var polls = ctx.CustomPolls.Where(p => p.TeamId == 0 && !usedPollIds.Contains(p.Id)).ToList();
 
                             // If they have all been used, we return one anyways
                             if (!polls.Any())
                             {
                                 polls = ctx.CustomPolls.Where(p => p.TeamId == 0).ToList();
                             }
-                        content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(polls[0]));
-                    } else
-                    {
-                        var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == 0 && !usedDiscussionIds.Contains(d.Id)).ToList();
+                            content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(polls[0]));
+                        }
+                        else
+                        {
+                            var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == 0 && !usedDiscussionIds.Contains(d.Id)).ToList();
                             // If they have all been used, we return one anyways
                             if (!discussions.Any())
                             {
@@ -169,18 +166,18 @@ namespace REST.Model.ActivityFolder
                         response.StatusCode = HttpStatusCode.OK;
                     }
                     else if (customPollsLeft && customDiscussionsLeft) // Both are present
-                {
-                    // 50/50 to return either a custom poll or discussion that has not been used 
-                    if (returnPoll)
                     {
-                        var polls = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).ToList();
-                        content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(polls[0]));
-                    }
-                    else
-                    {
-                        var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).ToList();
-                        content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0]));
-                        type = "discussion";
+                        // 50/50 to return either a custom poll or discussion that has not been used 
+                        if (returnPoll)
+                        {
+                            var polls = ctx.CustomPolls.Where(p => p.TeamId == Int32.Parse(teamId) && !usedPollIds.Contains(p.Id)).ToList();
+                            content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(polls[0]));
+                        }
+                        else
+                        {
+                            var discussions = ctx.CustomDiscussions.Where(d => d.TeamId == Int32.Parse(teamId) && !usedDiscussionIds.Contains(d.Id)).ToList();
+                            content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(discussions[0]));
+                            type = "discussion";
                         }
                         response.StatusCode = HttpStatusCode.OK;
                     }
@@ -236,7 +233,8 @@ namespace REST.Model.ActivityFolder
                     if (contentAndType.Item2.Equals("poll"))
                     {
                         discussionOrPollId = JsonConvert.DeserializeObject<CustomPollProperty>(content).Id;
-                    } else
+                    }
+                    else
                     {
                         discussionOrPollId = JsonConvert.DeserializeObject<CustomDiscussionProperty>(content).Id;
                     }
@@ -255,7 +253,7 @@ namespace REST.Model.ActivityFolder
 
                     return data;
                 }
-                
+
             }
 
             ActivityRequestObject emptyData = new ActivityRequestObject
@@ -266,7 +264,7 @@ namespace REST.Model.ActivityFolder
                 Content = "none"
             };
 
-            return emptyData; // Do something with this...
+            return emptyData;
         }
 
         public async Task<HttpResponseMessage> Vote(string channelId, string userId, int optionNumber)
@@ -283,37 +281,39 @@ namespace REST.Model.ActivityFolder
 
                 int teamId = team.TeamId;
 
-            var activity = ctx.Activities.Where(c => c.TeamId == teamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
+                var activity = ctx.Activities.Where(c => c.TeamId == teamId).OrderByDescending(c => c.ActivityOccuranceId).FirstOrDefault();
 
-            if (activity != null)
-            {
-                PollVoteProperty pvp = new PollVoteProperty
+                if (activity != null)
                 {
-                    UserId = userId,
-                    ActivityOccuranceId = activity.ActivityOccuranceId,
-                    VoteOptionNumber = optionNumber
-                };
+                    PollVoteProperty pvp = new PollVoteProperty
+                    {
+                        UserId = userId,
+                        ActivityOccuranceId = activity.ActivityOccuranceId,
+                        VoteOptionNumber = optionNumber
+                    };
 
-                bool alreadyVoted = ctx.PollVotes.Where(v => v.UserId.Equals(userId) && v.ActivityOccuranceId == activity.ActivityOccuranceId).Any();
+                    bool alreadyVoted = ctx.PollVotes.Where(v => v.UserId.Equals(userId) && v.ActivityOccuranceId == activity.ActivityOccuranceId).Any();
 
-                if (alreadyVoted)
-                {
-                    PollVoteProperty vote = ctx.PollVotes.Where(v => v.UserId.Equals(userId) && v.ActivityOccuranceId == activity.ActivityOccuranceId).FirstOrDefault();
-                    vote.VoteOptionNumber = optionNumber;
-                    ctx.SaveChanges();
-                    response.Content = new StringContent("Succesfully updated your vote!");
+                    if (alreadyVoted)
+                    {
+                        PollVoteProperty vote = ctx.PollVotes.Where(v => v.UserId.Equals(userId) && v.ActivityOccuranceId == activity.ActivityOccuranceId).FirstOrDefault();
+                        vote.VoteOptionNumber = optionNumber;
+                        ctx.SaveChanges();
+                        response.Content = new StringContent("Succesfully updated your vote!");
                     }
                     else
-                {
-                    ctx.PollVotes.Add(pvp);
-                    ctx.SaveChanges();
-                    response.Content = new StringContent("Succesfully added your vote!");
+                    {
+                        ctx.PollVotes.Add(pvp);
+                        ctx.SaveChanges();
+                        response.Content = new StringContent("Succesfully added your vote!");
                     }
-                } else
+                }
+                else
                 {
                     throw new Exception();
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
                 response.Content = new StringContent("Failed to add/update vote!");
@@ -341,7 +341,7 @@ namespace REST.Model.ActivityFolder
 
                     var poll = ctx.CustomPolls.Where(p => p.Id == latest.DiscussionOrPollId).FirstOrDefault();
 
-                    var answers = ctx.PollVotes.Where(v => v.ActivityOccuranceId == (latest.ActivityOccuranceId - 1)).ToList(); // TODO: I don't like having to retract 1, fix the logic...
+                    var answers = ctx.PollVotes.Where(v => v.ActivityOccuranceId == (latest.ActivityOccuranceId - 1)).ToList();
 
                     if (poll == null)
                     {
@@ -354,7 +354,7 @@ namespace REST.Model.ActivityFolder
 
                     foreach (var answer in answers)
                     {
-                        userIds.Add(answer.UserId); 
+                        userIds.Add(answer.UserId);
                     }
 
                     var users = ctx.Users.Where(u => userIds.Contains(u.MSTeamsId)).ToList();
@@ -363,7 +363,7 @@ namespace REST.Model.ActivityFolder
                     {
                         string userName = "Unnamed user";
 
-                        foreach(var user in users)
+                        foreach (var user in users)
                         {
                             if (user.MSTeamsId.Equals(answer.UserId))
                             {
@@ -371,12 +371,6 @@ namespace REST.Model.ActivityFolder
                             }
                         }
                         Tuple<int, string> answerNumberAndRespondant = new Tuple<int, string>(answer.VoteOptionNumber, userName); // Deduct user name from the id
-                        answersAndRespondants.Add(answerNumberAndRespondant);
-                    }
-
-                    if (answersAndRespondants.Count == 0)
-                    {
-                        Tuple<int, string> answerNumberAndRespondant = new Tuple<int, string>(1, "testhest"); // Deduct user name from the id
                         answersAndRespondants.Add(answerNumberAndRespondant);
                     }
 
@@ -392,7 +386,7 @@ namespace REST.Model.ActivityFolder
                     return response;
                 }
                 throw new Exception("Latest activity is not a poll!");
-            } 
+            }
             catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;

@@ -1,11 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Newtonsoft.Json;
-using NuGet.Protocol;
+﻿using Microsoft.EntityFrameworkCore;
 using Properties;
 using System.Net;
-using System.Web.Http;
 
 namespace WebAPI.Model.DisccusionFolder
 {
@@ -24,7 +19,7 @@ namespace WebAPI.Model.DisccusionFolder
 
             try
             {
-                foreach(var item in discussions)
+                foreach (var item in discussions)
                 {
                     var discussion = await ctx.CustomDiscussions.Where(c => c.Id == item.Id).FirstOrDefaultAsync();
                     if (discussion != null)
@@ -40,7 +35,8 @@ namespace WebAPI.Model.DisccusionFolder
                 response.StatusCode = HttpStatusCode.OK;
                 response.Content = new StringContent("Succesfully deleted discussion!");
                 return response;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
                 response.Content = new StringContent("Failed to delete discussion!");
@@ -79,18 +75,18 @@ namespace WebAPI.Model.DisccusionFolder
 
             try
             {
-            if (discussions != null)
-            {
+                if (discussions != null)
+                {
                     foreach (var discussion in discussions)
                     {
                         await ctx.CustomDiscussions.AddAsync(discussion);
                         await ctx.SaveChangesAsync();
                     }
-                response.StatusCode = HttpStatusCode.OK;
-                response.Content = new StringContent("Succesfully added discussions!");
-                return response;
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Content = new StringContent("Succesfully added discussions!");
+                    return response;
+                }
             }
-            } 
             catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;

@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Properties;
-using REST.Model.ExchangeClasses;
+﻿using REST.Model.ExchangeClasses;
 
 namespace REST.Model.ActivityFolder
 {

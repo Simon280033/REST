@@ -1,9 +1,4 @@
-﻿using Azure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Properties;
-using Properties.Team;
-using System.Collections.Generic;
+﻿using Properties;
 using System.Net;
 
 namespace WebAPI.Model.TeamFolder
@@ -26,7 +21,7 @@ namespace WebAPI.Model.TeamFolder
                 team.MSTeamsChannelId = channelID;
                 team.Recurring = "00000000000";
 
-                if (ctx.Teams.Where(t=>t.MSTeamsChannelId.Equals(channelID)).Any())
+                if (ctx.Teams.Where(t => t.MSTeamsChannelId.Equals(channelID)).Any())
                 {
                     throw new Exception();
                 }
@@ -44,14 +39,11 @@ namespace WebAPI.Model.TeamFolder
             return response;
         }
 
-
-
-
         public List<SocioliteTeamProperty> GetTeam(int id)
         {
             try
             {
-                var teams =  ctx.Teams.Where(t => t.TeamId == id).ToList();
+                var teams = ctx.Teams.Where(t => t.TeamId == id).ToList();
                 return teams;
             }
             catch (Exception e)
@@ -68,17 +60,6 @@ namespace WebAPI.Model.TeamFolder
             return teams;
         }
 
-        public int PutTeam(string recurrence, int teamId)
-        {
-           SocioliteTeamProperty user = ctx.Teams.Where(t=>t.TeamId == teamId).ToList().First();
-
-            user.Recurring = recurrence;
-
-            ctx.SaveChanges();
-            return 2;
-
-        }
-
         public async Task<HttpResponseMessage> ChangeActiveStatus(int teamId)
         {
             HttpResponseMessage response = new HttpResponseMessage();
@@ -86,48 +67,26 @@ namespace WebAPI.Model.TeamFolder
             try
             {
                 SocioliteTeamProperty team = ctx.Teams.Where(t => t.TeamId == teamId).First();
-                
-                    if (team.isActive)
-                    {
-                        team.isActive = false;
-                    }
-                    else
-                    {
-                        team.isActive = true;
-                    }
-                    await ctx.SaveChangesAsync();
+
+                if (team.isActive)
+                {
+                    team.isActive = false;
+                }
+                else
+                {
+                    team.isActive = true;
+                }
+                await ctx.SaveChangesAsync();
                 response.StatusCode = HttpStatusCode.OK;
                 response.Content = new StringContent("" + !team.isActive);
                 return response;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
                 response.Content = new StringContent("ERROR: Something went wrong!");
                 return response;
             }
-        }
-
-        public async Task<HttpStatusCode> DeleteTeam(int id)
-        {
-            //try
-            //{
-            //    var team = ctx.Teams.Where((t) => t.Id == id).ToList();
-            //    if (team.Any())
-            //    {
-            //        ctx.Teams.Remove(team.First());
-            //        await ctx.SaveChangesAsync();
-            //        return StatusCodes.Status200OK;
-            //    }
-
-            //    return StatusCodes.Status404NotFound;
-                
-            //}
-            //catch (Exception e)
-            //{
-            //    return StatusCodes.Status404NotFound;
-            //}
-            return HttpStatusCode.NotFound;
         }
 
         public List<SocioliteTeamProperty> GetUnconnectedTeams()
@@ -148,7 +107,7 @@ namespace WebAPI.Model.TeamFolder
                 // We make a list with the team IDs
                 List<int> teamIds = new List<int>();
 
-                foreach(var membership in memberships)
+                foreach (var membership in memberships)
                 {
                     teamIds.Add(membership.TeamId);
                 }
@@ -164,33 +123,33 @@ namespace WebAPI.Model.TeamFolder
             }
             response.StatusCode = HttpStatusCode.OK;
 
-                // We get the roles for the teams
-                List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>> teamsWithRoles = new List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>>();
-                
-                foreach (var team in teams)
+            // We get the roles for the teams
+            List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>> teamsWithRoles = new List<Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>>();
+
+            foreach (var team in teams)
+            {
+                if (team.MSTeamsTeamId != null)
                 {
-                    if (team.MSTeamsTeamId != null)
+                    var membershipsForTeam = ctx.TeamMemberships.Where(m => m.TeamId == team.TeamId).ToList();
+
+                    List<Tuple<UserProperty, string>> usersWithRoles = new List<Tuple<UserProperty, string>>();
+
+                    foreach (var membership in membershipsForTeam)
                     {
-                        var membershipsForTeam = ctx.TeamMemberships.Where(m => m.TeamId == team.TeamId).ToList();
-
-                        List<Tuple<UserProperty, string>> usersWithRoles = new List<Tuple<UserProperty, string>>();
-
-                        foreach (var membership in membershipsForTeam)
-                        {
-                            UserProperty user = ctx.Users.Where(u => u.MSTeamsId.Equals(membership.UserId)).FirstOrDefault();
-                            Tuple<UserProperty, string> userWithRole = new Tuple<UserProperty, string>(user, membership.TeamSpecificRole);
-                            usersWithRoles.Add(userWithRole);
-                        }
-
-                        teamsWithRoles.Add(new Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>(team, usersWithRoles));
+                        UserProperty user = ctx.Users.Where(u => u.MSTeamsId.Equals(membership.UserId)).FirstOrDefault();
+                        Tuple<UserProperty, string> userWithRole = new Tuple<UserProperty, string>(user, membership.TeamSpecificRole);
+                        usersWithRoles.Add(userWithRole);
                     }
+
+                    teamsWithRoles.Add(new Tuple<SocioliteTeamProperty, List<Tuple<UserProperty, string>>>(team, usersWithRoles));
                 }
-                if (teams.Count == 0)
-                {
-                    response.Content = new StringContent("No joined teams!");
-                }
-                response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(teamsWithRoles));
-            
+            }
+            if (teams.Count == 0)
+            {
+                response.Content = new StringContent("No joined teams!");
+            }
+            response.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(teamsWithRoles));
+
             return response;
         }
 

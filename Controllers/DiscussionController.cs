@@ -1,14 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Properties;
-using Properties.Team;
 using REST.Model.ExchangeClasses;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Net;
-using System.Text.Json.Nodes;
-using WebAPI.Model;
 using WebAPI.Model.DisccusionFolder;
-using WebAPI.Model.TeamFolder;
 
 namespace WebAPI.Controllers
 {
@@ -26,18 +19,15 @@ namespace WebAPI.Controllers
         [HttpGet("{teamId}")]
         public async Task<List<CustomDiscussionProperty>> Get([FromHeader] string teamId)
         {
-            // WE NEED TO ALTER THIS SO IT ONLY RETURNS DISCUSSIONS WHICH HAVE NOT ALREADY BEEN USED
             return await DiscussionContext.GetAllDiscussions(Int32.Parse(teamId));
         }
 
-
-        // POST api/<UserController>
         [HttpPost("{teamId}")]
         public async Task<IActionResult> Post([FromBody] List<SocioliteDiscussion> discussions, [FromHeader] string teamId)
         {
             List<CustomDiscussionProperty> customDiscussionProperties = new List<CustomDiscussionProperty>();
 
-            foreach(var discussion in discussions)
+            foreach (var discussion in discussions)
             {
                 CustomDiscussionProperty customDiscussionProperty = new CustomDiscussionProperty
                 {
@@ -49,7 +39,7 @@ namespace WebAPI.Controllers
                 };
                 customDiscussionProperties.Add(customDiscussionProperty);
             }
-            
+
             HttpResponseMessage response = await DiscussionContext.PostDiscussions(customDiscussionProperties);
             string message = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
@@ -62,9 +52,6 @@ namespace WebAPI.Controllers
             }
         }
 
-        
-
-        // DELETE api/<UserController>/5
         [HttpPut("{teamId}")]
         public async Task<IActionResult> Delete([FromBody] List<SocioliteDiscussion> discussions, [FromHeader] string teamId)
         {

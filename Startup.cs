@@ -25,7 +25,7 @@ namespace WebAPI
             services.AddScoped<IUser, User>();
             services.AddScoped<ITeamContext, TeamContext>();
             services.AddScoped<IDiscussionContext, DiscussionContext>();
-            services.AddScoped<IPollContext,PollContext>();
+            services.AddScoped<IPollContext, PollContext>();
             services.AddScoped<IMembershipContext, MembershipContext>();
             services.AddScoped<IActivityContext, ActivityContext>();
             services.AddDbContext<DatabaseContext>(options =>
