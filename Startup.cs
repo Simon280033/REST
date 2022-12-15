@@ -30,13 +30,9 @@ namespace WebAPI
             services.AddScoped<IActivityContext, ActivityContext>();
             services.AddDbContext<DatabaseContext>(options =>
             {
-                // options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
                 Console.WriteLine("getting to the breakpoint");
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
-
-            // SQLite
-            // services.AddDbContext<DatabaseContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
